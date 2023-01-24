@@ -1,0 +1,8 @@
+midi==0.2.3
+mido-fix==1.2.12
+musicpy==5.98
+numpy==1.24.1
+py==1.11.0
+pydub==0.25.1
+pygame==2.1.2
+sf2-loader==1.15
