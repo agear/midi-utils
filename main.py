@@ -75,9 +75,11 @@ from controller import Controller
 # main()
 
 def main():
+
     # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aphids/Aphids2.mid"
     # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/0.7/0.71.mid"
     midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aleksei's Visions of Chess War/Aleksei's Visions of Chess War.mid"
+
     controller = Controller(midi_file_path)
     controller.extract_midi_stems()
     # controller.convert_to_wav(path=controller.midi_stem_path)

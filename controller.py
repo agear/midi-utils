@@ -20,12 +20,14 @@ class Controller:
 
         print(self.stems_path)
 
+        self.make_directories()
+
+    def make_directories(self):
         try:
             os.mkdir(self.stems_path)
         except:
             print("cant make stem path!!!!")
             quit()
-
         self.midi_stem_path = f"{self.stems_path}/midi_stems"
         try:
             os.mkdir(self.midi_stem_path)
