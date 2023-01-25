@@ -130,7 +130,13 @@ PROGRAMS = [
     '127 - Gunshot'
 ]
 
-PERCUSSION = {33: "33 - Metronome Click",
+PERCUSSION = {27: "27 - High Q",
+              28: "28 - Slap",
+              29: "29 - Scratch Push",
+              30: "30 - Scratch Pull",
+              31: "31 - Sticks",
+              32: "32 - Square Click",
+              33: "33 - Metronome Click",
               34: "34 - Metronome Bell",
               35: "35 - Acoustic Bass Drum",
               36: "36 - Bass Drum 1",
