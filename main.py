@@ -80,6 +80,9 @@ def main():
     # TODO remove print statements
     # TODO Encapsulate track???
     # TODO first track should be 01
+    # TODO Figure out reverb
+    # TODO Add time calculator
+    # TODO Add multithreading
 
     # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aphids/Aphids2.mid"
     # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/0.7/0.71.mid"
