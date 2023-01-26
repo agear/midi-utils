@@ -84,6 +84,8 @@ def main():
     # TODO Add time calculator
     # TODO Add multithreading
     # TODO Don't bounce empty tracks (drums)
+    # TODO add test suite
+    # TODO add type hints
 
     # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aphids/Aphids2.mid"
     # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/0.7/0.71.mid"
