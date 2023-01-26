@@ -5,6 +5,8 @@ import midi
 from programs import PROGRAMS
 from programs import PERCUSSION
 import sf2_loader as sf
+from midi_event import Midi_Event
+from midi_track import Midi_Track
 
 
 class Controller:
@@ -39,6 +41,25 @@ class Controller:
         except:
             pass
 
+    def encapsulate_midi(self, track):
+        print("Encapsulating track")
+        current_program = None
+        encapsulated_track = []
+        for event in track:
+            event_copy = deepcopy(event)
+            if type(event_copy) == midi.ProgramChangeEvent:
+                current_program = event_copy.data[0]
+            encapsulated_event = Midi_Event(event=event_copy, program_number=current_program)
+            # print(f"ENCAPSULATED EVENT PROGRAM: {encapsulated_event.program_name}")
+            encapsulated_track.append(encapsulated_event)
+
+        encapsulated_track = Midi_Track(events=encapsulated_track, transport=self.transport_track, resolution=self.resoultion)
+
+        print(encapsulated_track.programs)
+
+        return encapsulated_track
+
+
     def extract_midi_stems(self):
         # TODO check for program changes and bounce separate stems
         # TODO check for fx/reverb and bounce both
@@ -46,8 +67,8 @@ class Controller:
         for i, track in enumerate(self.midi_multitrack):
             track_names = self.get_track_name(track)
             if len(track_names) == 0:
-                print("TEMPO CHANGES????")
-                print(track)
+                # print("TEMPO CHANGES????")
+                # print(track)
                 self.transport_track = track
                 continue
             if track_names[0] == "0 - Drum Kit 0":
@@ -62,7 +83,12 @@ class Controller:
                 print(f"Extracting{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {track_name}.mid")
                 midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {track_name}.mid", pattern)
             else:
-                self.extract_program_changes(track=track, i=i, track_names=track_names)
+                encapsulated_midi = self.encapsulate_midi(track=track)
+                # self.extract_program_changes(track=track, i=i, track_names=track_names)
+                patterns = encapsulated_midi.get_extracted_programs()
+                for pattern in patterns:
+                    midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {pattern[0]}.mid", pattern[1])
+
 
     def extract_program_changes(self, track, i, track_names):
         # TODO figure out this algorithm!!!
@@ -70,23 +96,31 @@ class Controller:
 
         patterns = []
 
-        for instrument in track_names:
+        set_track_names = set()
+
+        reduced_track_names = []
+
+        for t in track_names:
+            if t not in set_track_names:
+                reduced_track_names.append(t)
+                set_track_names.add(t)
+
+        print(f"REDUCED TRACK NAMES: {reduced_track_names}")
+
+
+
+        for instrument in reduced_track_names:
             print(instrument)
             pattern = midi.Pattern(resolution=self.resoultion)
             if self.transport_track:
                 pattern.append(self.transport_track)
-            current_program = None
+            current_program = instrument
             # TODO use a pointer???
             for event in track:
                 event_copy = deepcopy(event)
                 if type(event_copy) == midi.ProgramChangeEvent:
                     current_program = event_copy.data[0]
-                    print(current_program)
-
-
-
-
-
+                    # print(current_program)
 
     def get_formatted_track_number(self, i):
         if len(str(i+1)) == 2:
@@ -144,7 +178,8 @@ class Controller:
     def get_track_name(self, track):
         # print('checking track...')
         programs = []
-        for event in track:
+        pointers = []
+        for i, event in enumerate(track):
             if type(event) == midi.ProgramChangeEvent:
                 # print(f"EVENT: {event}")
                 if event.channel == 9:
@@ -152,9 +187,12 @@ class Controller:
                     return programs
                 else:
                     programs.append((event.data[0], PROGRAMS[event.data[0] + 1]))
+                    pointers.append(i)
 
         # print(programs)
         # programs = list(programs)
+        print(f"Programs: {programs}")
+        print(f"Pointers: {pointers}")
         return programs
 
     def convert_to_wav(self, path):
