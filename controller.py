@@ -41,7 +41,7 @@ class Controller:
         except:
             pass
 
-    def encapsulate_midi(self, track):
+    def encapsulate_midi(self, track, track_number):
         print("Encapsulating track")
         current_program = None
         encapsulated_track = []
@@ -53,15 +53,13 @@ class Controller:
             # print(f"ENCAPSULATED EVENT PROGRAM: {encapsulated_event.program_name}")
             encapsulated_track.append(encapsulated_event)
 
-        encapsulated_track = Midi_Track(events=encapsulated_track, transport=self.transport_track, resolution=self.resoultion)
+        encapsulated_track = Midi_Track(events=encapsulated_track, track_number=track_number, controller=self)
 
         print(encapsulated_track.programs)
 
         return encapsulated_track
 
-
     def extract_midi_stems(self):
-        # TODO check for program changes and bounce separate stems
         # TODO check for fx/reverb and bounce both
         print("Extracting midi stems")
         for i, track in enumerate(self.midi_multitrack):
@@ -83,12 +81,11 @@ class Controller:
                 print(f"Extracting{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {track_name}.mid")
                 midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {track_name}.mid", pattern)
             else:
-                encapsulated_midi = self.encapsulate_midi(track=track)
+                encapsulated_midi = self.encapsulate_midi(track=track, track_number=i)
                 # self.extract_program_changes(track=track, i=i, track_names=track_names)
                 patterns = encapsulated_midi.get_extracted_programs()
                 for pattern in patterns:
                     midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {pattern[0]}.mid", pattern[1])
-
 
     def extract_program_changes(self, track, i, track_names):
         # TODO figure out this algorithm!!!
@@ -172,7 +169,7 @@ class Controller:
                 percussion_instruments.add((event.data[0], PERCUSSION[event.data[0]]))
         percussion_instruments = list(percussion_instruments)
         percussion_instruments.sort()
-        print(percussion_instruments)
+        # print(percussion_instruments)
         return percussion_instruments
 
     def get_track_name(self, track):
@@ -191,8 +188,8 @@ class Controller:
 
         # print(programs)
         # programs = list(programs)
-        print(f"Programs: {programs}")
-        print(f"Pointers: {pointers}")
+        # print(f"Programs: {programs}")
+        # print(f"Pointers: {pointers}")
         return programs
 
     def convert_to_wav(self, path):
