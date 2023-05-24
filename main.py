@@ -1,18 +1,26 @@
+"""
+This script extracts MIDI stems from a MIDI file and converts them to WAV format.
+"""
+
 from controller import Controller
 import time
 
 def main():
-    # TODO Figure out why drum tracks aren't named
-    # TODO remove print statements
-    # TODO Encapsulate track???
-    # TODO first track should be 01
-    # TODO Figure out reverb
-    # TODO Add multithreading
-    # TODO Don't bounce empty tracks (drums)
-    # TODO add test suite
-    # TODO add type hints
+    """
+    Main function to execute the MIDI stem extraction and conversion process.
+    """
 
-    # Grab Currrent Time Before Running the Code
+    # TODO: Figure out why drum tracks aren't named
+    # TODO: remove print statements
+    # TODO: Encapsulate track???
+    # TODO: first track should be 01
+    # TODO: Figure out reverb
+    # TODO: Add multithreading
+    # TODO: Don't bounce empty tracks (drums)
+    # TODO: add test suite
+    # TODO: add type hints
+
+    # Grab current time before running the code
     start = time.perf_counter()
 
     # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aphids/Aphids2.mid"
@@ -25,12 +33,12 @@ def main():
     controller.extract_midi_stems()
     controller.convert_to_wav(path=controller.midi_stem_path)
 
-    # Grab Currrent Time After Running the Code
+    # Grab current time after running the code
     end = time.perf_counter()
 
-    #Subtract Start Time from The End Time
-    # total_time = end - start
-    # print("\n"+ str(total_time))
-    print(f"Finished in {round(end-start, 2)} second(s)")
+    # Calculate the execution time
+    execution_time = round(end - start, 2)
+    print(f"Finished in {execution_time} second(s)")
 
-main()
+if __name__ == "__main__":
+    main()
