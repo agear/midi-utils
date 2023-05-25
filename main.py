@@ -6,7 +6,7 @@ import argparse
 from controller import Controller
 import time
 
-def main(midi_file_path: str) -> None:
+def main(midi_file_path: str, convert_to_wav: bool) -> None:
     """
     Main function to execute the MIDI stem extraction and conversion process.
     """
@@ -32,7 +32,8 @@ def main(midi_file_path: str) -> None:
 
     controller = Controller(midi_file_path)
     controller.extract_midi_stems()
-    controller.convert_to_wav(path=controller.midi_stem_path)
+    if convert_to_wav:
+        controller.convert_to_wav(path=controller.midi_stem_path)
 
     # Grab current time after running the code
     end: float = time.perf_counter()
@@ -44,8 +45,10 @@ def main(midi_file_path: str) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MIDI Stem Extraction")
     parser.add_argument("midi_file_path", help="Path to the MIDI file")
+    parser.add_argument("-a", "--convert_to_wav", action="store_true", help="Convert MIDI to WAV")
 
     args = parser.parse_args()
     midi_file_path: str = args.midi_file_path
+    convert_to_wav: bool = args.convert_to_wav
 
-    main(midi_file_path)
+    main(midi_file_path, convert_to_wav)
