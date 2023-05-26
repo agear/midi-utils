@@ -1,4 +1,5 @@
 import os
+import shutil
 from copy import deepcopy
 from typing import List, Dict, Set, Optional
 
@@ -13,13 +14,21 @@ from midi_event import Midi_Event
 from midi_track_ag import Midi_Track_AG
 from percussion_instrument import Percussion_Instrument
 from program import Program
-import shutil
+
 
 
 class Controller:
-    def __init__(self, midi_file_path: str, base_path: Optional[str]="."):
+    def __init__(self, midi_file_path: str, convert_to_wave: bool, base_path: Optional[str]="."):
+        """
+        Controller class for MIDI processing.
+
+        Args:
+            midi_file_path (str): Path to MIDI file.
+            base_path (str, optional): Base path for storing stens, Defaults to current directory (".").
+        """
         self.midi_file_path: str = midi_file_path
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
+        self.convert_to_wave: bool = convert_to_wave
         self.soundfont: str = "/Users/agear/Documents/Projects/AGM/soundfont/gm.sf2"
         self.loader: sf.sf2_loader = sf.sf2_loader(self.soundfont)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
@@ -29,11 +38,16 @@ class Controller:
         self._make_directories()
         self.encapsulated_midi: List[Midi_Track_AG] = []
 
+
     def _make_directories(self) -> None:
+        """
+        Create directory structure for storing stems.
+        """
         try:
             shutil.rmtree(self.stems_path)
             print(f"Deleted {self.stems_path}")
         except OSError as e:
+            # TODO: why can't this be a format string???
             print("Error: %s : %s" % (self.stems_path, e.strerror))
 
         try:
@@ -46,15 +60,20 @@ class Controller:
             os.mkdir(self.midi_stem_path)
         except:
             pass
-        self.audio_stem_path = f"{self.stems_path}/audio_stems"
-        try:
-            os.mkdir(self.audio_stem_path)
-        except:
-            pass
+        if self.convert_to_wave:
+            self.audio_stem_path = f"{self.stems_path}/audio_stems"
+            try:
+                os.mkdir(self.audio_stem_path)
+            except:
+                pass
 
     # MIDI STUFF
 
     def _get_transport_track(self) -> None:
+        """
+        Find the transport track in the MIDI multitrack.
+        """
+        # TODO: why is this enumerate?
         for track in enumerate(self.midi_multitrack):
             track_names = self.get_track_name(track)
             if len(track_names) == 0:
@@ -62,6 +81,9 @@ class Controller:
                 return
 
     def extract_midi_stems(self) -> None:
+        """
+        Extract MIDI stems from the multitrack and save them as separate MIDI files.
+        """
         self._get_transport_track()
 
         for track_number, track in enumerate(self.midi_multitrack):
@@ -71,6 +93,9 @@ class Controller:
             track.write()
 
     def extract_midi_stems2(self) -> None:
+        """
+        Extract MIDI stems from the multitrack and save them as separate MIDI files (alternative method).
+        """
         print("Extracting midi stems")
         for i, track in enumerate(self.midi_multitrack):
             track_names = self.get_track_name(track)
@@ -98,6 +123,16 @@ class Controller:
                     midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {pattern[0]}.mid", pattern[1])
 
     def encapsulate_midi(self, track: midi.Track, track_number: int) -> Midi_Track_AG:
+        """
+            Encapsulate MIDI track events into a custom Midi_Track_AG object.
+
+            Args:
+                track (midi.Track): MIDI track to encapsulate.
+                track_number (int): Track number.
+
+            Returns:
+                Midi_Track_AG: Encapsulated MIDI track.
+        """
         print(f"Encapsulating track number {track_number}")
         current_program: int = None
         encapsulated_track: List[midi_event.Midi_Event] = []
@@ -149,6 +184,15 @@ class Controller:
     #                 # print(current_program)
 
     def get_formatted_track_number(self, i: int) -> str:
+        """
+            Get formatted track number for naming stems.
+
+            Args:
+                i (int): Track number.
+
+            Returns:
+                str: Formatted track number.
+        """
         if len(str(i+1)) == 2:
             return str(i+1)
         track_number: str = "0"
@@ -156,6 +200,13 @@ class Controller:
         return track_number
 
     def extract_midi_drum_stems(self, i: int, track: midi.Track) -> None:
+        """
+            Extract MIDI drum stems from the multitrack and save them as separate MIDI files.
+
+            Args:
+                i (int): Track number.
+                track (midi.Track): MIDI drum track.
+        """
         percussion_instruments: List[Percussion_Instrument] = self.get_percussion_instruments(track)
 
         percussion_path: str = f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - 0 - Drum Kit 0"
@@ -190,6 +241,15 @@ class Controller:
             midi.write_midifile(f"{percussion_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - 0 - Drum Kit 0 - {instrument.name}.mid", pattern)
 
     def get_percussion_instruments(self, track) -> List[Percussion_Instrument]:
+        """
+            Get the list of percussion instruments from the MIDI track.
+
+            Args:
+                track: MIDI track.
+
+            Returns:
+                List[Percussion_Instrument]: List of percussion instruments.
+        """
         percussion_instruments = set()
         for event in track:
             if type(event) == midi.NoteOnEvent:
@@ -203,6 +263,15 @@ class Controller:
         return percussion_instruments
 
     def get_track_name(self, track: midi.Track):
+        """
+            Get the program name associated with the MIDI track.
+
+            Args:
+                track (midi.Track): MIDI track.
+
+            Returns:
+                List[Program]: List of Program objects representing the program names of the track.
+        """
         # print('checking track...')
         programs: List[Program] = []
         # pointers = []
@@ -228,6 +297,12 @@ class Controller:
     # WAV STUFF
 
     def convert_to_wav(self, path):
+        """
+            Convert MIDI files to WAV format.
+
+            Args:
+                path (str): Path to the MIDI files.
+        """
         print("Starting conversion to .wav")
 
         # Bounce multitrack
