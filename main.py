@@ -30,7 +30,7 @@ def main(midi_file_path: str, convert_to_wav: bool) -> None:
     # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/The Human Body (Can Run On Sugar Alone Goddamnit!)/The human body can run on sugar alone, God damn it!8.mid"
 
 
-    controller = Controller(midi_file_path)
+    controller = Controller(midi_file_path, convert_to_wav)
     controller.extract_midi_stems()
     if convert_to_wav:
         controller.convert_to_wav(path=controller.midi_stem_path)
