@@ -185,7 +185,7 @@ class Controller:
 
     def get_formatted_track_number(self, i: int) -> str:
         """
-            Get formatted track number for naming stems.
+            Get formatted track number for naming stems, as 01, 02, ... 10, 11, etc
 
             Args:
                 i (int): Track number.
