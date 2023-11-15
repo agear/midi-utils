@@ -2,10 +2,9 @@
 This script extracts MIDI stems from a MIDI file and converts them to WAV format.
 """
 
-import argparse
-from controller import Controller
 import time
-from config import convert_to_wav, midi_file_path
+from controller import Controller
+from config import convert_to_wav, midi_file_paths
 
 def main(midi_file_path: str, convert_to_wav: bool) -> None:
     """
@@ -25,11 +24,6 @@ def main(midi_file_path: str, convert_to_wav: bool) -> None:
     # Grab current time before running the code
     start: float = time.perf_counter()
 
-    # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aphids/Aphids2.mid"
-    # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/0.7/0.71.mid"
-    # midi_file_path: str ="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aleksei's Visions of Chess War/Aleksei's Visions of Chess War.mid"
-    # midi_file_path="/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/The Human Body (Can Run On Sugar Alone Goddamnit!)/The human body can run on sugar alone, God damn it!8.mid"
-
 
     controller = Controller(midi_file_path, convert_to_wav)
     controller.extract_midi_stems()
@@ -44,12 +38,6 @@ def main(midi_file_path: str, convert_to_wav: bool) -> None:
     print(f"Finished in {execution_time} second(s)")
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser(description="MIDI Stem Extraction")
-    # parser.add_argument("midi_file_path", help="Path to the MIDI file")
-    # parser.add_argument("-a", "--convert_to_wav", action="store_true", help="Convert MIDI to WAV")
-    #
-    # args = parser.parse_args()
-    # midi_file_path: str = args.midi_file_path
-    # convert_to_wav: bool = args.convert_to_wav
 
-    main(midi_file_path, convert_to_wav)
+    for midi_file_path in midi_file_paths:
+        main(midi_file_path, convert_to_wav)
