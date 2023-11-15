@@ -5,6 +5,7 @@ This script extracts MIDI stems from a MIDI file and converts them to WAV format
 import argparse
 from controller import Controller
 import time
+from config import convert_to_wav, midi_file_path
 
 def main(midi_file_path: str, convert_to_wav: bool) -> None:
     """
@@ -43,12 +44,12 @@ def main(midi_file_path: str, convert_to_wav: bool) -> None:
     print(f"Finished in {execution_time} second(s)")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="MIDI Stem Extraction")
-    parser.add_argument("midi_file_path", help="Path to the MIDI file")
-    parser.add_argument("-a", "--convert_to_wav", action="store_true", help="Convert MIDI to WAV")
-
-    args = parser.parse_args()
-    midi_file_path: str = args.midi_file_path
-    convert_to_wav: bool = args.convert_to_wav
+    # parser = argparse.ArgumentParser(description="MIDI Stem Extraction")
+    # parser.add_argument("midi_file_path", help="Path to the MIDI file")
+    # parser.add_argument("-a", "--convert_to_wav", action="store_true", help="Convert MIDI to WAV")
+    #
+    # args = parser.parse_args()
+    # midi_file_path: str = args.midi_file_path
+    # convert_to_wav: bool = args.convert_to_wav
 
     main(midi_file_path, convert_to_wav)
