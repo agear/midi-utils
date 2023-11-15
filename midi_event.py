@@ -6,7 +6,7 @@ class Midi_Event:
     def __init__(self, event, program_number):
         self.event: midi.Event = event
         self.program_number: int = program_number
-        if program_number == None or type(event) == midi.EndOfTrackEvent:
+        if program_number == None or type(event) == midi.EndOfTrackEvent or type(event) == midi.TimeSignatureEvent or type(event) == midi.SetTempoEvent:
             self.program_name = "None"
         elif event.channel == 9:
             self.program_name = "0 - Drum Kit 0 "
