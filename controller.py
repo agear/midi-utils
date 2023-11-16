@@ -74,7 +74,7 @@ class Controller:
         Find the transport track in the MIDI multitrack.
         """
         # TODO: why is this enumerate?
-        for track in enumerate(self.midi_multitrack):
+        for track_number, track in enumerate(self.midi_multitrack):
             track_names = self.get_track_name(track)
             if len(track_names) == 0:
                 self.transport_track = track
