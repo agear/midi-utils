@@ -78,7 +78,6 @@ class Midi_Track_AG:
 
     def write(self):
         for pattern in self.patterns:
-            midi.write_midifile(
-                f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {pattern[0]}.mid",
-                pattern[1])
+            filename: str = f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {pattern[0]}.mid"
+            midi.write_midifile(filename, pattern[1])
 
