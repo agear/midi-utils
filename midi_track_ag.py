@@ -1,5 +1,3 @@
-from programs import PROGRAMS, PERCUSSION
-# from controller import Controller
 from midi_event import Midi_Event
 from typing import List
 from copy import deepcopy
@@ -8,14 +6,14 @@ import midi
 class Midi_Track_AG:
     def __init__(self, events: List[Midi_Event], track_number: int, controller):
         self.events: List[Midi_Event] = events
-        self.programs = self._get_programs()
+        self.programs: List[str] = self._get_programs()
         self.transport_track = controller.transport_track
         self.resolution: int = controller.resolution
-        self.midi_stem_path = controller.midi_stem_path
-        self.songname = controller.songname
-        self.track_number = self._get_formatted_track_number(i=track_number)
-        self.patterns = []
-        self.drums = self._is_drum_track()
+        self.midi_stem_path: str = controller.midi_stem_path
+        self.songname: str = controller.songname
+        self.track_number: str = self._get_formatted_track_number(i=track_number)
+        self.patterns: List[midi.Pattern] = []
+        self.drums: str = self._is_drum_track()
         self.extract_programs()
 
     def _is_drum_track(self) -> str:
@@ -50,28 +48,29 @@ class Midi_Track_AG:
 
     def extract_programs(self):
         print("Extracting programs...")
-        patterns = []
-        for program in self.programs:
-            if program == 'None':
-                continue
+
+        for program_name in self.programs:
+            if program_name == 'None':
                 print("Program is none")
+                continue
+
             pattern = midi.Pattern(resolution=self.resolution)
             pattern.append(self.transport_track)
             track = midi.Track()
             for event in self.events:
-                if event.program_name == 'None' or event.program_name == program:
+                if event.program_name == 'None' or event.program_name == program_name:
                     # print(f"Appending {event.event}")
                     track.append(deepcopy(event.event))
-                elif type(event.event) == midi.NoteOnEvent:
+                elif type(event.event) == midi.NoteOnEvent and event.program_name != program_name:
                     event_copy = deepcopy(event.event)
-                    event_copy.data[1] = 0
+                    event_copy.data[1] = 0 # make any note ons that aren't in the current program name have 0 velocity
                     # print(f"Appending {event_copy}")
                     track.append(event_copy)
                 else:
                     # print(f"Appending {event.event}")
                     track.append(deepcopy(event.event))
             pattern.append(track)
-            self.patterns.append((program, pattern))
+            self.patterns.append((program_name, pattern))
 
         # print(self.patterns)
 
@@ -79,8 +78,7 @@ class Midi_Track_AG:
 
     def write(self):
         for pattern in self.patterns:
-            try:
-                print(f"Writing {self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {pattern[0]}.mid")
-                midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {pattern[0]}.mid", pattern[1])
-            except:
-                print(f"ERROR: Couldn't write {self.midi_stem_path}/{self.songname} - {self.track_number} - {pattern[0]}.mid")
+            midi.write_midifile(
+                f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {pattern[0]}.mid",
+                pattern[1])
+
