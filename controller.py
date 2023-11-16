@@ -1,14 +1,12 @@
 import os
 import shutil
 from copy import deepcopy
-from typing import List, Dict, Set, Optional
+from typing import List, Optional, Union
 
 import midi
-import sf2_loader
+
 
 import midi_event
-from programs import PROGRAMS
-from programs import PERCUSSION
 import sf2_loader as sf
 from midi_event import Midi_Event
 from midi_track_ag import Midi_Track_AG
@@ -24,7 +22,7 @@ class Controller:
 
         Args:
             midi_file_path (str): Path to MIDI file.
-            base_path (str, optional): Base path for storing stens, Defaults to current directory (".").
+            base_path (str, optional): Base path for storing stems, Defaults to current directory (".").
         """
         self.midi_file_path: str = midi_file_path
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
@@ -100,8 +98,6 @@ class Controller:
         for i, track in enumerate(self.midi_multitrack):
             track_names = self.get_track_name(track)
             if len(track_names) == 0:
-                # print("TEMPO CHANGES????")
-                # print(track)
                 self.transport_track = track
                 continue
             if track_names[0] == "0 - Drum Kit 0":
@@ -110,14 +106,12 @@ class Controller:
             if self.transport_track:
                 pattern.append(self.transport_track)
             pattern.append(track)
-            # print(pattern)
             if len(set(track_names)) == 1:
                 track_name = track_names[0].program_name
                 print(f"Extracting{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {track_name}.mid")
                 midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {track_name}.mid", pattern)
             else:
                 encapsulated_midi = self.encapsulate_midi(track=track, track_number=i)
-                # self.extract_program_changes(track=track, i=i, track_names=track_names)
                 patterns = encapsulated_midi.extract_programs()
                 for pattern in patterns:
                     midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {pattern[0]}.mid", pattern[1])
@@ -134,7 +128,7 @@ class Controller:
                 Midi_Track_AG: Encapsulated MIDI track.
         """
         print(f"Encapsulating track number {track_number}")
-        current_program: int = None
+        current_program: Union[int, None] = None
         encapsulated_track: List[midi_event.Midi_Event] = []
         for event in track:
             event_copy: midi.Event = deepcopy(event)
@@ -151,39 +145,9 @@ class Controller:
 
         return encapsulated_track
 
-    # def extract_program_changes(self, track, i, track_names):
-    #     # TODO figure out this algorithm!!!
-    #     print(f"TRACK NAMES: {track_names}")
-    #
-    #     patterns = []
-    #
-    #     set_track_names = set()
-    #
-    #     reduced_track_names = []
-    #
-    #     for t in track_names:
-    #         if t not in set_track_names:
-    #             reduced_track_names.append(t)
-    #             set_track_names.add(t)
-    #
-    #     print(f"REDUCED TRACK NAMES: {reduced_track_names}")
-    #
-    #
-    #
-    #     for instrument in reduced_track_names:
-    #         print(instrument)
-    #         pattern = midi.Pattern(resolution=self.resoultion)
-    #         if self.transport_track:
-    #             pattern.append(self.transport_track)
-    #         current_program = instrument
-    #         # TODO use a pointer???
-    #         for event in track:
-    #             event_copy = deepcopy(event)
-    #             if type(event_copy) == midi.ProgramChangeEvent:
-    #                 current_program = event_copy.data[0]
-    #                 # print(current_program)
 
-    def get_formatted_track_number(self, i: int) -> str:
+    @staticmethod
+    def get_formatted_track_number(i: int) -> str:
         """
             Get formatted track number for naming stems, as 01, 02, ... 10, 11, etc
 
@@ -227,20 +191,16 @@ class Controller:
             percussion_track: midi.Track = midi.Track()
             for event in track:
                 event_copy: midi.Event = deepcopy(event)
-                if type(event_copy) == midi.NoteOnEvent:
-                    # print(f"BEFORE:{event_copy}")
-                    if event_copy.data[0] != instrument.number:
+                if type(event_copy) == midi.NoteOnEvent and event_copy.data[0] != instrument.number:
                         event_copy.data[1] = 0
-                        # print(f"AFTER:{event_copy}")
+
                 percussion_track.append(event_copy)
             pattern.append(percussion_track)
-            # print(track)
-            # print(instrument)
-            # print(percussion_track)
             print(f"Extracting {percussion_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - 0 - Drum Kit 0 - {instrument.name}.mid")
             midi.write_midifile(f"{percussion_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - 0 - Drum Kit 0 - {instrument.name}.mid", pattern)
 
-    def get_percussion_instruments(self, track) -> List[Percussion_Instrument]:
+    @staticmethod
+    def get_percussion_instruments(track) -> List[Percussion_Instrument]:
         """
             Get the list of percussion instruments from the MIDI track.
 
@@ -253,16 +213,12 @@ class Controller:
         percussion_instruments = set()
         for event in track:
             if type(event) == midi.NoteOnEvent:
-                # print(f"Event data: {event}")
-                # print(f"PERCUSSION: {PERCUSSION[event.data[0]]}")
-                # percussion_instruments.add((event.data[0], PERCUSSION[event.data[0]]))
                 percussion_instruments.add(Percussion_Instrument(event.data[0]))
         percussion_instruments = list(percussion_instruments)
-        # percussion_instruments.sort()
-        # print(percussion_instruments)
         return percussion_instruments
 
-    def get_track_name(self, track: midi.Track):
+    @staticmethod
+    def get_track_name(track: midi.Track):
         """
             Get the program name associated with the MIDI track.
 
@@ -272,12 +228,12 @@ class Controller:
             Returns:
                 List[Program]: List of Program objects representing the program names of the track.
         """
-        # print('checking track...')
+
         programs: List[Program] = []
-        # pointers = []
+
         for i, event in enumerate(track):
             if type(event) == midi.ProgramChangeEvent:
-                # print(f"EVENT: {event}")
+
                 if event.channel == 9:
                     program = Program()
                     program.program_name = "0 - Drum Kit 0"
@@ -286,12 +242,7 @@ class Controller:
                 else:
                     program = Program(event.data[0])
                     programs.append(program)
-                    # pointers.append(i)
 
-        # print(programs)
-        # programs = list(programs)
-        # print(f"Programs: {programs}")
-        # print(f"Pointers: {pointers}")
         return programs
 
     # WAV STUFF
