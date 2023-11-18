@@ -86,8 +86,12 @@ class Controller:
         """
         self._get_transport_track()
 
-        for track_number, track in enumerate(self.midi_multitrack):
+        track_number = 0
+        for track in (self.midi_multitrack):
+            if track == self.transport_track: # This fixes the track numbering bug.
+                continue
             self.encapsulated_midi.append(self.encapsulate_midi(track=track, track_number=track_number))
+            track_number += 1
 
         for track in self.encapsulated_midi:
             track.write()
