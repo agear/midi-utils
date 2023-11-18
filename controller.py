@@ -1,7 +1,7 @@
 import os
 import shutil
 from copy import deepcopy
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import midi
 
@@ -75,8 +75,10 @@ class Controller:
         for track_number, track in enumerate(self.midi_multitrack):
             track_names = self.get_track_name(track)
             if len(track_names) == 0:
+                print(f"Track {track_number} is the transport")
                 self.transport_track = track
                 return
+        print("No transport track")
 
     def extract_midi_stems(self) -> None:
         """
@@ -128,7 +130,7 @@ class Controller:
                 Midi_Track_AG: Encapsulated MIDI track.
         """
         print(f"Encapsulating track number {track_number}")
-        current_program: Union[int, None] = None
+        current_program: Optional[int] = None
         encapsulated_track: List[midi_event.Midi_Event] = []
         for event in track:
             event_copy: midi.Event = deepcopy(event)
@@ -200,7 +202,7 @@ class Controller:
             midi.write_midifile(f"{percussion_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - 0 - Drum Kit 0 - {instrument.name}.mid", pattern)
 
     @staticmethod
-    def get_percussion_instruments(track) -> List[Percussion_Instrument]:
+    def get_percussion_instruments(track: midi.Track) -> List[Percussion_Instrument]:
         """
             Get the list of percussion instruments from the MIDI track.
 
@@ -218,7 +220,7 @@ class Controller:
         return percussion_instruments
 
     @staticmethod
-    def get_track_name(track: midi.Track):
+    def get_track_name(track: midi.Track) -> List[Program]:
         """
             Get the program name associated with the MIDI track.
 
@@ -247,7 +249,7 @@ class Controller:
 
     # WAV STUFF
 
-    def convert_to_wav(self, path):
+    def convert_to_wav(self, path: str) -> None:
         """
             Convert MIDI files to WAV format.
 
