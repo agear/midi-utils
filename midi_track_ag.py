@@ -70,6 +70,10 @@ class Midi_Track_AG:
                     # print(f"Appending {event.event}")
                     track.append(deepcopy(event.event))
             pattern.append(track)
+
+            if program_name == "0 - Drum Kit 0 ":
+                # TODO: get specific percussion instrument name
+                assert False
             self.patterns.append((program_name, pattern))
 
         # print(self.patterns)
@@ -78,6 +82,7 @@ class Midi_Track_AG:
 
     def write(self):
         for pattern in self.patterns:
-            filename: str = f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {pattern[0]}.mid"
+            instrument_name = pattern[0]
+            filename: str = f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {instrument_name}.mid"
             midi.write_midifile(filename, pattern[1])
 
