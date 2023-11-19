@@ -14,7 +14,7 @@ def main(midi_file_path: str, convert_to_wav: bool) -> None:
     # TODO: remove print statements
     # TODO: Encapsulate track???
     # TODO: Figure out reverb
-    # TODO: Add multithreading
+    # TODO: Add multithreading (doesn't work with sf2_loader)
     # TODO: Don't bounce empty tracks (drums)
     # TODO: add test suite
     # TODO: add type hints
