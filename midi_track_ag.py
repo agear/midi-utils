@@ -20,12 +20,12 @@ class Midi_Track_AG:
         self.extract_programs()
 
     def _is_drum_track(self) -> str:
-        print("Calling _is_drum_track()")
+        # print("Calling _is_drum_track()")
         for event in self.events:
             if type(event.event) == midi.ProgramChangeEvent:
                 print(event.event)
                 if event.event.channel == 9:
-                    print("FOUND A DRUM TRACK!!!!")
+                    # print("FOUND A DRUM TRACK!!!!")
                     self.extract_midi_drum_stems(i=self.track_number, track=self.events)
                     return "- 0 - Drum Kit 0 "
             # except:
@@ -104,7 +104,7 @@ class Midi_Track_AG:
         percussion_instruments: List[Percussion_Instrument] = self.get_percussion_instruments(track)
 
         percussion_path: str = f"{self.midi_stem_path}/{self.songname} - {self.track_number} - 0 - Drum Kit 0"
-        print(percussion_path)
+        # print(percussion_path)
 
         try:
             os.mkdir(percussion_path)
@@ -115,7 +115,7 @@ class Midi_Track_AG:
         for instrument in percussion_instruments:
             # TODO go through track and mute all other instruments...
             # TODO figure out of track is empty and delete it
-            print(f"Looking for {instrument}")
+            # print(f"Looking for {instrument}")
             pattern: midi.Pattern = midi.Pattern(resolution=self.resolution)
             if self.transport_track:
                 pattern.append(self.transport_track)
@@ -123,7 +123,7 @@ class Midi_Track_AG:
             for event in track:
                 event_copy: midi.Event = deepcopy(event)
                 if type(event_copy.event) == midi.NoteOnEvent and event_copy.event.data[0] != instrument.number:
-                        print("setting data = 0")
+                        # print("setting data = 0")
                         event_copy.event.data[1] = 0
 
                 percussion_track.append(event_copy.event)
@@ -144,9 +144,9 @@ class Midi_Track_AG:
         """
         percussion_instruments = set()
         for event in track:
-            print(type(event.event))
+            # print(type(event.event))
             if type(event.event) == midi.NoteOnEvent:
-                print(event.event.data[0])
+                # print(event.event.data[0])
                 percussion_instruments.add(Percussion_Instrument(event.event.data[0]))
         percussion_instruments = list(percussion_instruments)
         return percussion_instruments
