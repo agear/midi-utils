@@ -11,10 +11,8 @@ def main(midi_file_path: str, convert_to_wav: bool) -> None:
     Main function to execute the MIDI stem extraction and conversion process.
     """
 
-    # TODO: Figure out why drum tracks aren't named
     # TODO: remove print statements
     # TODO: Encapsulate track???
-    # TODO: first track should be 01
     # TODO: Figure out reverb
     # TODO: Add multithreading
     # TODO: Don't bounce empty tracks (drums)
