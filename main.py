@@ -19,8 +19,7 @@ def main(midi_file_path: str, convert_to_wav: bool) -> None:
     # TODO: add test suite
     # TODO: add type hints
 
-    # Grab current time before running the code
-    start: float = time.perf_counter()
+
 
 
     controller = Controller(midi_file_path, convert_to_wav)
@@ -28,14 +27,18 @@ def main(midi_file_path: str, convert_to_wav: bool) -> None:
     if convert_to_wav:
         controller.convert_to_wav(path=controller.midi_stem_path)
 
+
+if __name__ == "__main__":
+
+    # Grab current time before running the code
+    start: float = time.perf_counter()
+
+    for midi_file_path in midi_file_paths:
+        main(midi_file_path, convert_to_wav)
+
     # Grab current time after running the code
     end: float = time.perf_counter()
 
     # Calculate the execution time
     execution_time: float = round(end - start, 2)
     print(f"Finished in {execution_time} second(s)")
-
-if __name__ == "__main__":
-
-    for midi_file_path in midi_file_paths:
-        main(midi_file_path, convert_to_wav)
