@@ -1,6 +1,8 @@
 import midi
 
 from programs import PROGRAMS, PERCUSSION
+from typing import Optional
+
 
 class Midi_Event:
     """
@@ -30,15 +32,22 @@ class Midi_Event:
             raise TypeError("event must be an instance of midi.Event or a subclass thereof")
         self.event: midi.Event = event
         self.program_number: int = program_number
-        if program_number is None or type(event) == midi.EndOfTrackEvent or type(event) == midi.TimeSignatureEvent or type(event) == midi.SetTempoEvent:
-            self.program_name = "None"
-        elif event.channel == 9:
-            self.program_name = "0 - Drum Kit 0 "
-        else:
-            self.program_name = PROGRAMS[self.program_number]
+        self.program_name: str = self._get_program_name()
+
+
+    def _get_program_name(self):
+        if self.program_number is None or not isinstance(self.event, self.ALLOWED_EVENT_TYPES):
+            return "None"
+        if self.event.channel == 9:
+            return "0 - Drum Kit 0"
+
+        return PROGRAMS[self.program_number]
+
+    def _generate_string(self):
+        return f"\n\n\n\n***MIDI_EVENT***\nProgram number: {self.program_number}\nProgram name: {self.program_name}\nEvent: {self.event}\n****************"
 
     def __str__(self):
-        return f"\n\n\n\n***MIDI_EVENT***\nProgram number: {self.program_number}\nProgram name: {self.program_name}\nEvent: {self.event}\n****************"
+        return self._generate_string()
 
     def __repr__(self):
-        return f"\n\n\n\n***MIDI_EVENT***\nProgram number: {self.program_number}\nProgram name: {self.program_name}\nEvent: {self.event}\n****************"
+        return self._generate_string()
