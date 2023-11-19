@@ -73,7 +73,7 @@ class Controller:
         """
         # TODO: why is this enumerate?
         for track_number, track in enumerate(self.midi_multitrack):
-            track_names = self.get_track_name(track)
+            track_names = self.get_track_name(track=track)
             if len(track_names) == 0:
                 print(f"Track {track_number} is the transport")
                 self.transport_track = track
@@ -86,7 +86,7 @@ class Controller:
         """
         self._get_transport_track()
 
-        track_number = 0
+        track_number: int = 0
         for track in (self.midi_multitrack):
             if track == self.transport_track: # This fixes the track numbering bug.
                 continue
