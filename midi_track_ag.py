@@ -1,11 +1,31 @@
 import os
-from midi_event import Midi_Event
 from typing import List
 from copy import deepcopy
 import midi
+from midi_event import Midi_Event
 from percussion_instrument import Percussion_Instrument
 
 class Midi_Track_AG:
+    """
+        The Midi_Track_AG class represents a MIDI track and provides functionalities to extract and
+        manipulate MIDI events within the track.
+
+        Example Usage
+        # Create a Midi_Track_AG object
+        track = Midi_Track_AG(events, track_number, controller)
+
+        # Extract programs from the track
+        track.extract_programs()
+
+        # Write the track to MIDI files
+        track.write()
+
+        # Extract MIDI drum stems from the track
+        track.extract_midi_drum_stems(i, track)
+
+        # Get the list of percussion instruments in the track
+        percussion_instruments = Midi_Track_AG.get_percussion_instruments(track)
+    """
     def __init__(self, events: List[Midi_Event], track_number: int, controller):
         self.events: List[Midi_Event] = events
         self.programs: List[str] = self._get_program_names()
@@ -20,6 +40,7 @@ class Midi_Track_AG:
         self.extract_programs()
 
     def _is_drum_track(self) -> str:
+        """Checks if the track is a drum track by analyzing the MIDI events."""
         # print("Calling _is_drum_track()")
         for event in self.events:
             if type(event.event) == midi.ProgramChangeEvent:
@@ -35,6 +56,7 @@ class Midi_Track_AG:
         return ""
 
     def _get_program_names(self):
+        """Retrieves the unique program names from the MIDI events in the track."""
         program_names = set()
         for event in self.events:
             program_names.add(event.program_name)
@@ -44,6 +66,7 @@ class Midi_Track_AG:
         return list(program_names)
 
     def _get_formatted_track_number(self, i):
+        """Formats the track number as a string with leading zeros if necessary."""
         if len(str(i+1)) == 2:
             return str(i+1)
         track_number = "0"
@@ -51,6 +74,7 @@ class Midi_Track_AG:
         return track_number
 
     def extract_programs(self):
+        """Extracts programs from the track and creates MIDI patterns for each program."""
         print("Extracting programs...")
         if self.is_drums:
             self.controller.extract_midi_drum_stems(i=self.track_number, track=self.events)
@@ -88,6 +112,7 @@ class Midi_Track_AG:
         return self.patterns
 
     def write(self):
+        """Writes the MIDI patterns to separate MIDI files."""
         for pattern in self.patterns:
             instrument_name = pattern[0]
             filename: str = f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {instrument_name}.mid"
@@ -95,7 +120,7 @@ class Midi_Track_AG:
 
     def extract_midi_drum_stems(self, i: int, track: midi.Track) -> None:
         """
-            Extract MIDI drum stems from the multitrack and save them as separate MIDI files.
+            Extracts MIDI drum stems from the track and saves them as separate MIDI files.
 
             Args:
                 i (int): Track number.
@@ -134,7 +159,7 @@ class Midi_Track_AG:
     @staticmethod
     def get_percussion_instruments(track: midi.Track) -> List[Percussion_Instrument]:
         """
-            Get the list of percussion instruments from the MIDI track.
+            Retrieves the list of percussion instruments from the track.
 
             Args:
                 track: MIDI track.
