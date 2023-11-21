@@ -17,7 +17,7 @@ from program import Program
 
 
 class Controller:
-    def __init__(self, midi_file_path: str, convert_to_wave: bool, base_path: Optional[str]="."):
+    def __init__(self, midi_file_path: str, soundfont_path: str, convert_to_wave: bool, base_path: Optional[str]="."):
         """
         Controller class for MIDI processing.
 
@@ -28,7 +28,7 @@ class Controller:
         self.midi_file_path: str = midi_file_path
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
         self.convert_to_wave: bool = convert_to_wave
-        self.soundfont: str = "/Users/agear/Documents/Projects/AGM/soundfont/gm.sf2"
+        self.soundfont: str = soundfont_path
         self.loader: sf.sf2_loader = sf.sf2_loader(self.soundfont)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
