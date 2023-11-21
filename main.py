@@ -8,7 +8,20 @@ from config import convert_to_wav, midi_file_paths, soundfont_path
 
 def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool) -> None:
     """
-    Main function to execute the MIDI stem extraction and conversion process.
+        This code defines a main function that serves as the entry point for executing the MIDI stem extraction
+        and conversion process. It creates an instance of the Controller class, extracts MIDI stems from a
+        given MIDI file, and optionally converts them to WAV format using the provided Soundfont file.
+
+        Example Usage
+        main("path/to/midi/file.mid", "path/to/soundfont/file.sf2", True)
+
+        This code will extract MIDI stems from the MIDI file located at "path/to/midi/file.mid" and
+        convert them to WAV format using the Soundfont file located at "path/to/soundfont/file.sf2".
+
+        Inputs
+        midi_file_path (str): The path to the MIDI file.
+        soundfont_path (str): The path to the Soundfont file.
+        convert_to_wav (bool): A flag indicating whether to convert the extracted MIDI stems to WAV format.
     """
 
     # TODO: remove print statements
