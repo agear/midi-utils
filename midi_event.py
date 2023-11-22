@@ -59,11 +59,11 @@ class Midi_Event:
     def __init__(self, event: midi.Event, program_number: Optional[int]):
         if program_number is not None:
             if not(0 <= program_number <= 127):
-                raise ValueError("Invalid program number")
+                program_number = None
         if not isinstance(event, Midi_Event.ALLOWED_EVENT_TYPES):
             raise TypeError("event must be an instance of midi.Event or a subclass thereof")
         self.event: midi.Event = event
-        self.program_number: int = program_number
+        self.program_number: Optional[int] = program_number
         self.program_name: str = self._get_program_name()
 
 
