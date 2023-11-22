@@ -22,13 +22,45 @@ class Midi_Event:
         The program name is set to "None" if the program number is None or if the event is an end of track event,
         time signature event, or set tempo event.
         If the event's channel is 9, indicating a percussion instrument, the program name is set to "0 - Drum Kit 0".
-        """
+    """
+    ALLOWED_EVENT_TYPES = (midi.AbstractEvent,
+                            midi.Event,
+                            midi.MetaEvent,
+                            midi.NoteEvent,
+                            midi.NoteOnEvent,
+                            midi.NoteOffEvent,
+                            midi.AfterTouchEvent,
+                            midi.ControlChangeEvent,
+                            midi.ProgramChangeEvent,
+                            midi.ChannelAfterTouchEvent,
+                            midi.PitchWheelEvent,
+                            midi.SysexEvent,
+                            midi.SequenceNumberMetaEvent,
+                            midi.MetaEventWithText,
+                            midi.TextMetaEvent,
+                            midi.CopyrightMetaEvent,
+                            midi.TrackNameEvent,
+                            midi.InstrumentNameEvent,
+                            midi.LyricsEvent,
+                            midi.MarkerEvent,
+                            midi.CuePointEvent,
+                            midi.ProgramNameEvent,
+                            midi.ChannelPrefixEvent,
+                            midi.PortEvent,
+                            midi.TrackLoopEvent,
+                            midi.EndOfTrackEvent,
+                            midi.SetTempoEvent,
+                            midi.SmpteOffsetEvent,
+                            midi.TimeSignatureEvent,
+                            midi.KeySignatureEvent,
+                            midi.SequencerSpecificEvent,
+                           )
 
-    ALLOWED_EVENT_TYPES = (midi.NoteOnEvent, midi.NoteOffEvent, midi.ControlChangeEvent, midi.Event)
     def __init__(self, event: midi.Event, program_number: Optional[int]):
-        if program_number is not None and not(0 <= program_number <= 127):
-            raise ValueError("Invalid program number")
-        if not isinstance(event, midi.Event):
+        if program_number is not None:
+            if not(0 <= program_number <= 127):
+                raise ValueError("Invalid program number")
+        if not isinstance(event, Midi_Event.ALLOWED_EVENT_TYPES):
             raise TypeError("event must be an instance of midi.Event or a subclass thereof")
         self.event: midi.Event = event
         self.program_number: int = program_number
@@ -36,12 +68,15 @@ class Midi_Event:
 
 
     def _get_program_name(self):
-        if self.program_number is None or not isinstance(self.event, self.ALLOWED_EVENT_TYPES):
+        if self.program_number is None:
             return "None"
-        if self.event.channel == 9:
-            return "0 - Drum Kit 0"
 
-        return PROGRAMS[self.program_number]
+        try:
+            if self.event.channel == 9:
+                return "0 - Drum Kit 0"
+            return PROGRAMS[self.program_number]
+        except AttributeError:
+            return "None"
 
     def _generate_string(self):
         return f"\n\n\n\n***MIDI_EVENT***\nProgram number: {self.program_number}\nProgram name: {self.program_name}\nEvent: {self.event}\n****************"
