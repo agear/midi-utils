@@ -1,7 +1,7 @@
 """
 This script extracts MIDI stems from a MIDI file and converts them to WAV format.
 """
-
+import concurrent
 import time
 from controller import Controller
 from config import convert_to_wav, midi_file_paths, soundfont_path, base_path
@@ -52,6 +52,8 @@ def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool, base_pa
     controller.extract_midi_stems()
     if convert_to_wav:
         controller.convert_to_wav(path=controller.midi_stem_path)
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     executor.submit(controller.convert_to_wav, path=controller.midi_stem_path)
 
 
 if __name__ == "__main__":
