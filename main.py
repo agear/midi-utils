@@ -4,13 +4,15 @@ This script extracts MIDI stems from a MIDI file and converts them to WAV format
 
 import time
 from controller import Controller
-from config import convert_to_wav, midi_file_paths, soundfont_path
+from config import convert_to_wav, midi_file_paths, soundfont_path, base_path
+from typing import Optional
 
-def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool) -> None:
+def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool, base_path: Optional[str]= ".") -> None:
     """
-        This code defines a main function that serves as the entry point for executing the MIDI stem extraction
-        and conversion process. It creates an instance of the Controller class, extracts MIDI stems from a
-        given MIDI file, and optionally converts them to WAV format using the provided Soundfont file.
+        This code defines a main function that serves as the entry point for executing
+        the MIDI stem extraction and conversion process. It creates an instance of the
+        Controller class, extracts MIDI stems from a given MIDI file, and optionally
+        converts them to WAV format using the provided Soundfont file.
 
         Example Usage
         main("path/to/midi/file.mid", "path/to/soundfont/file.sf2", True)
@@ -21,7 +23,8 @@ def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool) -> None
         Inputs
         midi_file_path (str): The path to the MIDI file.
         soundfont_path (str): The path to the Soundfont file.
-        convert_to_wav (bool): A flag indicating whether to convert the extracted MIDI stems to WAV format.
+        convert_to_wav (bool): A flag indicating whether to convert the extracted MIDI stems
+        to WAV format.
     """
 
     # TODO: remove print statements
@@ -32,10 +35,10 @@ def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool) -> None
     # TODO: add test suite
     # TODO: add type hints
 
-
-
-
-    controller = Controller(midi_file_path=midi_file_path, soundfont_path=soundfont_path, convert_to_wav=convert_to_wav)
+    controller = Controller(midi_file_path=midi_file_path,
+                            soundfont_path=soundfont_path,
+                            convert_to_wav=convert_to_wav,
+                            base_path=base_path)
     controller.extract_midi_stems()
     if convert_to_wav:
         controller.convert_to_wav(path=controller.midi_stem_path)
@@ -47,7 +50,10 @@ if __name__ == "__main__":
     start: float = time.perf_counter()
 
     for midi_file_path in midi_file_paths:
-        main(midi_file_path=midi_file_path, soundfont_path=soundfont_path, convert_to_wav=convert_to_wav)
+        main(midi_file_path=midi_file_path,
+             soundfont_path=soundfont_path,
+             convert_to_wav=convert_to_wav,
+             base_path=base_path)
 
     # Grab current time after running the code
     end: float = time.perf_counter()
