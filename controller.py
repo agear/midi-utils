@@ -19,15 +19,24 @@ from program import Program
 class Controller:
     def __init__(self, midi_file_path: str, soundfont_path: str, convert_to_wav: bool, base_path: Optional[str]= "."):
         """
-        Controller class for MIDI processing.
+        The Controller class is responsible for processing MIDI files. It extracts MIDI stems from a multitrack
+        MIDI file and saves them as separate MIDI files. It also has the functionality to convert MIDI files
+        to WAV format.
+
+        Example Usage
+        controller = Controller(midi_file_path, soundfont_path, convert_to_wav)
+        controller.extract_midi_stems()
+        controller.convert_to_wav()
 
         Args:
             midi_file_path (str): Path to MIDI file.
+            soundfont_path (str): Path to Soundfont file used for rendering to WAV.
+            convert_to_wav (bool):
             base_path (str, optional): Base path for storing stems, Defaults to current directory (".").
         """
         self.midi_file_path: str = midi_file_path
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
-        self.convert_to_wave: bool = convert_to_wav
+        self.convert_to_wave: bool = convert_to_wav # In the controller this is only used for creating a file path
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
