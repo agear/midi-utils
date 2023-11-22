@@ -42,29 +42,13 @@ class Controller:
         """
         Create directory structure for storing stems.
         """
-        try:
-            shutil.rmtree(self.stems_path)
-            print(f"Deleted {self.stems_path}")
-        except OSError as e:
-            # TODO: why can't this be a format string???
-            print("Error: %s : %s" % (self.stems_path, e.strerror))
-
-        try:
-            os.mkdir(self.stems_path)
-        except:
-            print("cant make stem path!!!!")
-            quit()
+        os.makedirs(name=self.stems_path, exist_ok=True)
         self.midi_stem_path = f"{self.stems_path}/midi_stems"
-        try:
-            os.mkdir(self.midi_stem_path)
-        except:
-            pass
+        os.makedirs(name=self.midi_stem_path, exist_ok=True)
         if self.convert_to_wave:
             self.audio_stem_path = f"{self.stems_path}/audio_stems"
-            try:
-                os.mkdir(self.audio_stem_path)
-            except:
-                pass
+            os.makedirs(name=self.audio_stem_path, exist_ok=True)
+
 
     # MIDI STUFF
 
@@ -183,11 +167,7 @@ class Controller:
         percussion_path: str = f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - 0 - Drum Kit 0"
         print(percussion_path)
 
-        try:
-            os.mkdir(percussion_path)
-        except:
-            print("Can't make percussion path")
-            quit()
+        os.makedirs(name=percussion_path, exist_ok=True)
 
         for instrument in percussion_instruments:
             # TODO go through track and mute all other instruments...
