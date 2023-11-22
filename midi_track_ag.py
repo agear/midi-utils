@@ -131,11 +131,7 @@ class Midi_Track_AG:
         percussion_path: str = f"{self.midi_stem_path}/{self.songname} - {self.track_number} - 0 - Drum Kit 0"
         # print(percussion_path)
 
-        try:
-            os.mkdir(percussion_path)
-        except:
-            print("Can't make percussion path")
-            quit()
+        os.makedirs(name=percussion_path, exist_ok=True)
 
         for instrument in percussion_instruments:
             # TODO go through track and mute all other instruments...
