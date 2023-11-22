@@ -6,6 +6,8 @@ import time
 from controller import Controller
 from config import convert_to_wav, midi_file_paths, soundfont_path, base_path
 from typing import Optional
+from pathlib import Path
+import logging
 
 def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool, base_path: Optional[str]= ".") -> None:
     """
@@ -34,6 +36,14 @@ def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool, base_pa
     # TODO: Don't bounce empty tracks (drums)
     # TODO: add test suite
     # TODO: add type hints
+
+    if not Path(midi_file_path).exists():
+        raise FileNotFoundError(f"MIDI file not found: {midi_file_path}")
+    if not Path(soundfont_path).exists():
+        raise FileNotFoundError(f"Soundfont file not found: {soundfont_path}")
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
 
     controller = Controller(midi_file_path=midi_file_path,
                             soundfont_path=soundfont_path,
