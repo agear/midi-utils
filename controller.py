@@ -226,7 +226,7 @@ class Controller:
 
         programs: List[Program] = []
 
-        for i, event in enumerate(track):
+        for event in track:
             if type(event) == midi.ProgramChangeEvent:
 
                 if event.channel == 9:
