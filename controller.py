@@ -66,7 +66,7 @@ class Controller:
         """
         # TODO: why is this enumerate?
         for track_number, track in enumerate(self.midi_multitrack):
-            track_names = self.get_track_name(track=track)
+            track_names = self.get_track_names(track=track)
             if len(track_names) == 0:
                 print(f"Track {track_number} is the transport")
                 self.transport_track = track
@@ -95,7 +95,7 @@ class Controller:
         """
         print("Extracting midi stems")
         for i, track in enumerate(self.midi_multitrack):
-            track_names = self.get_track_name(track)
+            track_names = self.get_track_names(track)
             if len(track_names) == 0:
                 self.transport_track = track
                 continue
@@ -213,7 +213,7 @@ class Controller:
         return percussion_instruments
 
     @staticmethod
-    def get_track_name(track: midi.Track) -> List[Program]:
+    def get_track_names(track: midi.Track) -> List[Program]:
         """
             Get the program name associated with the MIDI track.
 
