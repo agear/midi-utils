@@ -89,31 +89,6 @@ class Controller:
         for track in self.encapsulated_midi:
             track.write()
 
-    def extract_midi_stems2(self) -> None:
-        """
-        Extract MIDI stems from the multitrack and save them as separate MIDI files (alternative method).
-        """
-        print("Extracting midi stems")
-        for i, track in enumerate(self.midi_multitrack):
-            track_names = self.get_track_names(track)
-            if len(track_names) == 0:
-                self.transport_track = track
-                continue
-            if track_names[0] == "0 - Drum Kit 0":
-                self.extract_midi_drum_stems(i, track)
-            pattern = midi.Pattern(resolution=self.resolution)
-            if self.transport_track:
-                pattern.append(self.transport_track)
-            pattern.append(track)
-            if len(set(track_names)) == 1:
-                track_name = track_names[0].program_name
-                print(f"Extracting{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {track_name}.mid")
-                midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {track_name}.mid", pattern)
-            else:
-                encapsulated_midi = self.encapsulate_midi(track=track, track_number=i)
-                patterns = encapsulated_midi.extract_programs()
-                for pattern in patterns:
-                    midi.write_midifile(f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - {pattern[0]}.mid", pattern[1])
 
     def encapsulate_midi(self, track: midi.Track, track_number: int) -> Midi_Track_AG:
         """
