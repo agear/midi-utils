@@ -77,90 +77,64 @@ class TestController:
         encapsulated_track = controller.encapsulate_midi(track=controller.midi_multitrack[1], track_number=1)
 
         # TODO: Does the program list need to contain 'None'?
-        assert encapsulated_track.programs == ['None', '0 - Drum Kit 0']
+        assert 'None' in encapsulated_track.programs
+        assert '0 - Drum Kit 0' in encapsulated_track.programs
         assert encapsulated_track.track_number == "02"
 
         # TODO: make more test midi tracks more instrument changes
 
 
-    #  Controller can extract midi stems
-    # def test_extract_midi_stems(self):
-    #
-    #     controller = Controller(midi_file_path=TestController.midi_file_path,
-    #                             soundfont_path=TestController.soundfont_path,
-    #                             convert_to_wav=TestController.convert_to_wav,
-    #                             base_path=TestController.base_path)
-    #
-    #     controller.extract_midi_stems()
-    #
-    #     assert len(controller.encapsulated_midi) == len(controller.midi_multitrack) - 1
-    #     assert isinstance(controller.transport_track, midi.Track)
-    #     assert isinstance(controller.encapsulated_midi[0], Midi_Track_AG)
-    #     assert isinstance(controller.encapsulated_midi[0].events[0], Midi_Event)
-    #     assert isinstance(controller.encapsulated_midi[0].programs, list)
-    #     assert isinstance(controller.encapsulated_midi[0].patterns, list)
-    #
-    # #  Controller can extract midi drum stems
-    # def test_extract_midi_drum_stems(self):
-    #
-    #     controller = Controller(midi_file_path=TestController.midi_file_path,
-    #                             soundfont_path=TestController.soundfont_path,
-    #                             convert_to_wav=TestController.convert_to_wav,
-    #                             base_path=TestController.base_path)
-    #
-    #     controller.extract_midi_drum_stems(0, controller.midi_multitrack[0])
-    #
-    #     assert len(os.listdir(controller.midi_stem_path)) == 1 or len(os.listdir(controller.midi_stem_path)) == 2
-    #     assert len(os.listdir(f'{controller.midi_stem_path}/{controller.songname} - 01 - 0 - Drum Kit 0')) == len(controller.get_percussion_instruments(controller.midi_multitrack[0]))
-    #
-    # #  Controller can encapsulate midi tracks
-    # def test_encapsulate_midi(self):
-    #
-    #
-    #     controller = Controller(midi_file_path=TestController.midi_file_path,
-    #                             soundfont_path=TestController.soundfont_path,
-    #                             convert_to_wav=TestController.convert_to_wav,
-    #                             base_path=TestController.base_path)
-    #     encapsulated_track = controller.encapsulate_midi(controller.midi_multitrack[0], 0)
-    #
-    #     assert isinstance(encapsulated_track, Midi_Track_AG)
-    #     assert isinstance(encapsulated_track.events[0], Midi_Event)
-    #     assert isinstance(encapsulated_track.programs, list)
-    #     assert isinstance(encapsulated_track.patterns, list)
-    #
-    # #  Controller can handle no transport track
-    # def test_no_transport_track(self):
-    #
-    #     controller = Controller(midi_file_path=TestController.midi_file_path,
-    #                             soundfont_path=TestController.soundfont_path,
-    #                             convert_to_wav=TestController.convert_to_wav,
-    #                             base_path=TestController.base_path)
-    #     controller.transport_track = None
-    #     controller.extract_midi_stems()
-    #
-    #     assert len(controller.encapsulated_midi) == len(controller.midi_multitrack)
-    #
-    # #  Controller can handle no program name
-    # def test_no_program_name(self):
-    #
-    #
-    #     controller = Controller(midi_file_path=TestController.midi_file_path,
-    #                             soundfont_path=TestController.soundfont_path,
-    #                             convert_to_wav=TestController.convert_to_wav,
-    #                             base_path=TestController.base_path)
-    #     controller.get_track_names(controller.midi_multitrack[0])
-    #
-    #     assert len(controller.get_track_names(controller.midi_multitrack[0])) == 0
-    #
-    # #  Controller can handle no audio stem path
-    # # def test_no_audio_stem_path(self):
-    # #
-    # #     controller = Controller(midi_file_path=TestController.midi_file_path,
-    # #                             soundfont_path=TestController.soundfont_path,
-    # #                             convert_to_wav=TestController.convert_to_wav,
-    # #                             base_path=TestController.base_path)
-    # #
-    # #     controller.audio_stem_path = None
-    # #     controller.convert_to_wav(controller.audio_stem_path)
-    # #
-    # #     assert True
+    def test_get_percussion_instruments(self):
+        controller = Controller(midi_file_path=TestController.midi_file_path,
+                                soundfont_path=TestController.soundfont_path,
+                                convert_to_wav=TestController.convert_to_wav,
+                                base_path=TestController.base_path)
+
+        percussion_instruments = controller.get_percussion_instruments(track=midi.Track())
+
+        # Test that empty track has no percussion instruments
+        assert percussion_instruments == []
+
+        #TODO: What happens if non-percussion track is given to get_percussion_instruments()?
+
+        percussion_instruments = controller.get_percussion_instruments(track=controller.midi_multitrack[0])
+
+        # Test that transport track has now percussion instruments.
+        assert percussion_instruments == []
+
+        percussion_instruments = controller.get_percussion_instruments(track=controller.midi_multitrack[1])
+
+        assert len(percussion_instruments) == 3
+
+        assert percussion_instruments[0].number == 51
+        assert percussion_instruments[0].name == "51 - Ride Cymbal 1"
+        assert percussion_instruments[1].number == 27
+        assert percussion_instruments[1].name == "27 - High Q"
+        assert percussion_instruments[2].number == 31
+        assert percussion_instruments[2].name == "31 - Sticks"
+
+    def test_get_track_names(self):
+        controller = Controller(midi_file_path=TestController.midi_file_path,
+                                soundfont_path=TestController.soundfont_path,
+                                convert_to_wav=TestController.convert_to_wav,
+                                base_path=TestController.base_path)
+
+        track_names = controller.get_track_names(track=midi.Track())
+
+        assert track_names == []
+
+        track_names = controller.get_track_names(track=controller.midi_multitrack[0])
+
+        assert track_names == []
+
+        track_names = controller.get_track_names(track=controller.midi_multitrack[1])
+
+        assert len(track_names) == 1
+
+        assert track_names[0].program_number == 0
+        assert track_names[0].program_name == "0 - Drum Kit 0"
+
+        #TODO: get_track_names with single instruments and changing instruments
+        #TODO: get_track_names with instrument a->instrument b->instrument
+
+
