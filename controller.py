@@ -137,37 +137,6 @@ class Controller:
         track_number += str(i+1)
         return track_number
 
-    def extract_midi_drum_stems(self, i: int, track: midi.Track) -> None:
-        """
-            Extract MIDI drum stems from the multitrack and save them as separate MIDI files.
-
-            Args:
-                i (int): Track number.
-                track (midi.Track): MIDI drum track.
-        """
-        percussion_instruments: List[Percussion_Instrument] = self.get_percussion_instruments(track)
-
-        percussion_path: str = f"{self.midi_stem_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - 0 - Drum Kit 0"
-        print(percussion_path)
-
-        os.makedirs(name=percussion_path, exist_ok=True)
-
-        for instrument in percussion_instruments:
-            # TODO go through track and mute all other instruments...
-            # TODO figure out of track is empty and delete it
-            pattern: midi.Pattern = midi.Pattern(resolution=self.resolution)
-            if self.transport_track:
-                pattern.append(self.transport_track)
-            percussion_track: midi.Track = midi.Track()
-            for event in track:
-                event_copy: midi.Event = deepcopy(event)
-                if type(event_copy) == midi.NoteOnEvent and event_copy.data[0] != instrument.number:
-                        event_copy.data[1] = 0
-
-                percussion_track.append(event_copy)
-            pattern.append(percussion_track)
-            print(f"Extracting {percussion_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - 0 - Drum Kit 0 - {instrument.name}.mid")
-            midi.write_midifile(f"{percussion_path}/{self.songname} - {self.get_formatted_track_number(i=i)} - 0 - Drum Kit 0 - {instrument.name}.mid", pattern)
 
     @staticmethod
     def get_percussion_instruments(track: midi.Track) -> List[Percussion_Instrument]:
