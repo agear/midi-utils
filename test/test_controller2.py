@@ -138,3 +138,18 @@ class TestController:
         #TODO: get_track_names with instrument a->instrument b->instrument
 
 
+    def test_extract_midi_stems(self):
+        # TODO: This needs to be much better/more robust.
+
+        controller = Controller(midi_file_path=TestController.midi_file_path,
+                                soundfont_path=TestController.soundfont_path,
+                                convert_to_wav=TestController.convert_to_wav,
+                                base_path=TestController.base_path)
+
+        controller.extract_midi_stems()
+
+        path = f"{TestController.base_path}/{controller.songname}/midi_stems/{controller.songname} - 01 - 0 - Drum Kit 0 - 0 - Drum Kit 0.mid"
+
+        reimported = midi.read_midifile(path)
+
+        assert reimported[0][0].data[0] == 7
