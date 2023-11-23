@@ -36,7 +36,7 @@ class Controller:
         """
         self.midi_file_path: str = midi_file_path
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
-        self.convert_to_wave: bool = convert_to_wav # In the controller this is only used for creating a file path
+        self.convert_to_wav: bool = convert_to_wav # In the controller this is only used for creating a file path
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
@@ -53,7 +53,7 @@ class Controller:
         os.makedirs(name=self.stems_path, exist_ok=True)
         self.midi_stem_path = f"{self.stems_path}/midi_stems"
         os.makedirs(name=self.midi_stem_path, exist_ok=True)
-        if self.convert_to_wave:
+        if self.convert_to_wav:
             self.audio_stem_path = f"{self.stems_path}/audio_stems"
             os.makedirs(name=self.audio_stem_path, exist_ok=True)
 
