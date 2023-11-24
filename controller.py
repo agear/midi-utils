@@ -121,24 +121,6 @@ class Controller:
 
 
     @staticmethod
-    def get_formatted_track_number(i: int) -> str:
-        """
-            Get formatted track number for naming stems, as 01, 02, ... 10, 11, etc
-
-            Args:
-                i (int): Track number.
-
-            Returns:
-                str: Formatted track number.
-        """
-        if len(str(i+1)) == 2:
-            return str(i+1)
-        track_number: str = "0"
-        track_number += str(i+1)
-        return track_number
-
-
-    @staticmethod
     def get_percussion_instruments(track: midi.Track) -> List[Percussion_Instrument]:
         """
             Get the list of percussion instruments from the MIDI track.
