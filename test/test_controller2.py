@@ -24,7 +24,7 @@ class TestController:
         assert controller.midi_file_path == TestController.midi_file_path
         assert controller.songname == "percussion_test"
         assert controller.file_extension == ".mid"
-        assert controller.convert_to_wav == TestController.convert_to_wav
+        assert controller.convert_to_wav_flag == TestController.convert_to_wav
         assert isinstance(controller.loader, sf.sf2_loader)
         assert controller.loader.file == [TestController.soundfont_path]
         assert controller.loader.current_sfid == 1
@@ -36,7 +36,7 @@ class TestController:
             for j in range(len(midifile[i])):
                 assert type(controller.midi_multitrack[i][j]) == type(midifile[i][j])
 
-
+        #TODO: Add assertions for _make_directories()
 
         assert controller.resolution == 480
         assert controller.stems_path == f"{TestController.base_path}/percussion_test"
@@ -73,6 +73,7 @@ class TestController:
 
         assert encapsulated_track.programs == []
         assert encapsulated_track.track_number == "01"
+
 
         encapsulated_track = controller.encapsulate_midi(track=controller.midi_multitrack[1], track_number=1)
 
@@ -153,3 +154,15 @@ class TestController:
         reimported = midi.read_midifile(path)
 
         assert reimported[0][0].data[0] == 7
+
+
+    def test_convert_to_wav(self):
+        controller = Controller(midi_file_path=TestController.midi_file_path,
+                                soundfont_path=TestController.soundfont_path,
+                                convert_to_wav=TestController.convert_to_wav,
+                                base_path=TestController.base_path)
+
+        controller.extract_midi_stems()
+        controller.convert_to_wav(path=controller.midi_stem_path)
+
+        assert False
