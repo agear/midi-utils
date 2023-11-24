@@ -36,7 +36,7 @@ class Controller:
         """
         self.midi_file_path: str = midi_file_path
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
-        self.convert_to_wav: bool = convert_to_wav # In the controller this is only used for creating a file path
+        self.convert_to_wav_flag: bool = convert_to_wav # In the controller this is only used for creating a file path
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
@@ -53,7 +53,7 @@ class Controller:
         os.makedirs(name=self.stems_path, exist_ok=True)
         self.midi_stem_path = f"{self.stems_path}/midi_stems"
         os.makedirs(name=self.midi_stem_path, exist_ok=True)
-        if self.convert_to_wav:
+        if self.convert_to_wav_flag:
             self.audio_stem_path = f"{self.stems_path}/audio_stems"
             os.makedirs(name=self.audio_stem_path, exist_ok=True)
 
@@ -176,6 +176,8 @@ class Controller:
                 path (str): Path to the MIDI files.
         """
         print("Starting conversion to .wav")
+
+        # path: str = self.midi_stem_path
 
         # Bounce multitrack
         self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All.wav', format='wav')
