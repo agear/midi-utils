@@ -149,5 +149,21 @@ class Program:
         '127 - Gunshot'
     ]
     def __init__(self, program_number: int=0):
-        self.program_number: int = program_number
-        self.program_name: str = PROGRAMS[self.program_number]
+        if not isinstance(program_number, int):
+            raise TypeError(f"program_number must be an integer. Received: {program_number}")
+        if not -1 < program_number < len(Program.PROGRAMS):
+            raise ValueError(f"Invalid program number. Received: {program_number}")
+        self._program_number: int = program_number
+        self._program_name: str = Program.PROGRAMS[self._program_number]
+
+    def get_program_name(self) -> str:
+        return self._program_name
+
+    @property
+    def program_number(self):
+        return self._program_number
+
+    @program_number.setter
+    def program_number(self, value):
+        self._program_number = value
+        self._program_name = Program.PROGRAMS[self._program_number]
