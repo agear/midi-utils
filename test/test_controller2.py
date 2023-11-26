@@ -119,15 +119,27 @@ class TestController:
 
         assert len(percussion_instruments) == 13
 
-        test_numbers = [27, 31, 33, 34, 35]
-        test_names = ["31 - Sticks", '33 - Metronome Click', '35 - Acoustic Bass Drum', '34 - Metronome Bell', "51 - Ride Cymbal 1"]
+        test_numbers = [28, 31, 33, 34, 35, 36, 38, 39, 40, 41, 42, 43, 44]
+        test_names = ["28 - Slap",
+                      "31 - Sticks",
+                      '33 - Metronome Click',
+                      '34 - Metronome Bell',
+                      '35 - Acoustic Bass Drum',
+                      '36 - Bass Drum 1',
+                      "38 - Acoustic Snare",
+                      "39 - Hand Clap",
+                      "40 - Electric Snare",
+                      '41 - Low Floor Tom',
+                      "42 - Closed Hi-Hat",
+                      '43 - High Floor Tom',
+                      "44 - Pedal Hi-Hat"]
 
-        assert percussion_instruments[0].number in test_numbers
-        assert percussion_instruments[0].name in test_names
-        assert percussion_instruments[1].number in test_numbers
-        assert percussion_instruments[1].name in test_names
-        assert percussion_instruments[2].number in test_numbers
-        assert percussion_instruments[2].name in test_names
+
+        for percussion_instrument in percussion_instruments:
+            assert percussion_instrument.number in test_numbers
+            assert percussion_instrument.name in test_names
+
+
 
     def test_get_track_names(self):
         controller = Controller(midi_file_path=TestController.midi_file_path,
