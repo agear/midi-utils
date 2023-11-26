@@ -164,6 +164,10 @@ class Program:
         return self._program_number
 
     @program_number.setter
-    def program_number(self, value):
-        self._program_number = value
+    def program_number(self, program_number):
+        if not isinstance(program_number, int):
+            raise TypeError(f"program_number must be an integer. Received: {program_number}")
+        if not -1 < program_number < len(Program.PROGRAMS):
+            raise ValueError(f"Invalid program number. Received: {program_number}")
+        self._program_number = program_number
         self._program_name = Program.PROGRAMS[self._program_number]
