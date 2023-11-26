@@ -16,8 +16,11 @@ class Percussion_Instrument:
     print(instrument1 == instrument2)  # Output: False
     """
     def __init__(self, number: int):
-        if not (26 < number < 82):
-            raise ValueError(f"Percussion Instrument number must be between 27 and 81. Received: {number}")
+        if not isinstance(number, int):
+            raise TypeError(f"Number should be an integer. Received: {type(number)}")
+        if number not in PERCUSSION:
+            raise ValueError(f"Percussion Instrument number must be a valid key in PERCUSSION dictionary "
+                             f"(Between 27 and 81). Received: {number}")
 
         self.number: int = number
         self.name: str = PERCUSSION[self.number]
