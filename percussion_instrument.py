@@ -32,4 +32,4 @@ class Percussion_Instrument:
         return self.name
 
     def __hash__(self):
-        return hash(self.number)
+        return hash((self.number, self.name))
