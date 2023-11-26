@@ -163,11 +163,11 @@ class TestController:
         test_names = ['4 - Electric Piano 1', '28 - Electric Guitar (muted)']
 
         assert track_names[0].program_number in test_numbers
-        assert track_names[0].program_name in test_names
+        assert track_names[0].get_program_name() in test_names
         assert track_names[1].program_number in test_numbers
-        assert track_names[1].program_name in test_names
+        assert track_names[1].get_program_name() in test_names
         assert track_names[2].program_number in test_numbers
-        assert track_names[2].program_name in test_names
+        assert track_names[2].get_program_name() in test_names
 
         #TODO: get_track_names with single instruments and changing instruments
         #TODO: get_track_names with instrument a->instrument b->instrument
