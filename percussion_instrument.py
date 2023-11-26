@@ -1,4 +1,5 @@
 from programs import PERCUSSION
+from typing import Union
 
 class Percussion_Instrument:
     """
@@ -25,14 +26,14 @@ class Percussion_Instrument:
         self.number: int = number
         self.name: str = PERCUSSION[self.number]
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, Percussion_Instrument):
             return self.number == other.number
 
         return NotImplemented
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.number, self.name))
