@@ -26,7 +26,7 @@ class Percussion_Instrument:
         if isinstance(other, Percussion_Instrument):
             return self.number == other.number
 
-        return False
+        return NotImplemented
 
     def __str__(self):
         return self.name
