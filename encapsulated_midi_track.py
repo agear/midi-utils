@@ -5,7 +5,7 @@ import midi
 from encapsulated_midi_event import Encapsulated_Midi_Event
 from percussion_instrument import Percussion_Instrument
 
-class Midi_Track_AG:
+class Encapsulated_Midi_Track:
     """
         The Midi_Track_AG class represents a MIDI track and provides functionalities to extract and
         manipulate MIDI events within the track.
