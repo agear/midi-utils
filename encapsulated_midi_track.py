@@ -39,6 +39,36 @@ class Encapsulated_Midi_Track:
         self.is_drums: bool = False
         self.extract_programs()
 
+    # TODO: refactor encapsulare_midi from controller class
+    def encapsulate_midi_events(self, track: midi.Track, track_number: int):
+        """
+            Encapsulate MIDI track events into a custom Midi_Track_AG object.
+
+            Args:
+                track (midi.Track): MIDI track to encapsulate.
+                track_number (int): Track number.
+
+            Returns:
+                Encapsulated_Midi_Track: Encapsulated MIDI track.
+        """
+        print(f"Encapsulating track number {track_number}")
+        current_program: Optional[int] = None
+        encapsulated_track: List[Encapsulated_Midi_Event] = []
+        for event in track:
+            event_copy: midi.Event = deepcopy(event)
+            if type(event_copy) == midi.ProgramChangeEvent:
+                current_program = event_copy.data[0]
+            encapsulated_event: Encapsulated_Midi_Event = Encapsulated_Midi_Event(event=event_copy, program_number=current_program)
+
+            encapsulated_track.append(encapsulated_event)
+
+        # encapsulated_track: Encapsulated_Midi_Track = Encapsulated_Midi_Track(events=encapsulated_track, track_number=track_number,
+        #                                                                       controller=self)
+
+        # print(encapsulated_track.programs)
+
+        return encapsulated_track
+
     def _is_drum_track(self) -> str:
         """Checks if the track is a drum track by analyzing the MIDI events."""
         # print("Calling _is_drum_track()")

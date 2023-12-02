@@ -91,36 +91,6 @@ class Controller:
             track.write()
 
 
-    def encapsulate_midi(self, track: midi.Track, track_number: int) -> Midi_Track_AG:
-        """
-            Encapsulate MIDI track events into a custom Midi_Track_AG object.
-
-            Args:
-                track (midi.Track): MIDI track to encapsulate.
-                track_number (int): Track number.
-
-            Returns:
-                Midi_Track_AG: Encapsulated MIDI track.
-        """
-        print(f"Encapsulating track number {track_number}")
-        current_program: Optional[int] = None
-        encapsulated_track: List[midi_event.Midi_Event] = []
-        for event in track:
-            event_copy: midi.Event = deepcopy(event)
-            if type(event_copy) == midi.ProgramChangeEvent:
-                current_program = event_copy.data[0]
-            encapsulated_event: Midi_Event = Midi_Event(event=event_copy, program_number=current_program)
-
-            encapsulated_track.append(encapsulated_event)
-
-
-        encapsulated_track: Midi_Track_AG = Midi_Track_AG(events=encapsulated_track, track_number=track_number, controller=self)
-
-        print(encapsulated_track.programs)
-
-        return encapsulated_track
-
-
     @staticmethod
     def get_percussion_instruments(track: midi.Track) -> List[Percussion_Instrument]:
         """
