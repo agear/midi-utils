@@ -4,6 +4,7 @@ from copy import deepcopy
 import midi
 from encapsulated_midi_event import Encapsulated_Midi_Event
 from percussion_instrument import Percussion_Instrument
+from typing import Optional
 
 class Encapsulated_Midi_Track:
     """
@@ -95,7 +96,7 @@ class Encapsulated_Midi_Track:
         print(f'Programs: {list(program_names)}')
         return list(program_names)
 
-    def _get_formatted_track_number(self, i):
+    def _get_formatted_track_number(self, i: int) -> str:
         """Formats the track number as a string with leading zeros if necessary."""
         if len(str(i+1)) == 2:
             return str(i+1)
@@ -141,7 +142,7 @@ class Encapsulated_Midi_Track:
 
         return self.patterns
 
-    def write(self):
+    def write(self) -> None:
         """Writes the MIDI patterns to separate MIDI files."""
         for pattern in self.patterns:
             instrument_name = pattern[0]
