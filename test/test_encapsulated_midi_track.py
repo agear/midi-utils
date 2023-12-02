@@ -1,5 +1,5 @@
 import pytest
-from midi_event import Midi_Event
+from encapsulated_midi_event import Encapsulated_Midi_Event
 from controller import Controller
 from midi_track_ag import Midi_Track_AG
 import midi

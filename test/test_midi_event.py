@@ -3,7 +3,7 @@
 
 import pytest
 import midi
-from midi_event import Midi_Event
+from encapsulated_midi_event import Encapsulated_Midi_Event
 from programs import PROGRAMS
 
 class TestMidiEvent:
@@ -13,7 +13,7 @@ class TestMidiEvent:
         event = midi.Event()
         program_number = 1
 
-        midi_event = Midi_Event(event, program_number)
+        midi_event = Encapsulated_Midi_Event(event, program_number)
 
         assert midi_event.event == event
         assert midi_event.program_number == program_number
@@ -24,7 +24,7 @@ class TestMidiEvent:
         event.channel = 2
         program_number = 1
 
-        midi_event = Midi_Event(event, program_number)
+        midi_event = Encapsulated_Midi_Event(event, program_number)
 
         assert midi_event.program_name == PROGRAMS[program_number]
 
@@ -34,7 +34,7 @@ class TestMidiEvent:
         event.channel = 9
         program_number = 1
 
-        midi_event = Midi_Event(event, program_number)
+        midi_event = Encapsulated_Midi_Event(event, program_number)
 
         assert midi_event.program_name == "0 - Drum Kit 0"
 
@@ -43,7 +43,7 @@ class TestMidiEvent:
         event = midi.EndOfTrackEvent()
         program_number = 1
 
-        midi_event = Midi_Event(event, program_number)
+        midi_event = Encapsulated_Midi_Event(event, program_number)
 
         assert midi_event.program_name == "None"
 
@@ -52,7 +52,7 @@ class TestMidiEvent:
         event = midi.Event()
         program_number = None
 
-        midi_event = Midi_Event(event, program_number)
+        midi_event = Encapsulated_Midi_Event(event, program_number)
 
         assert midi_event.program_name == "None"
 
@@ -61,7 +61,7 @@ class TestMidiEvent:
         event = midi.EndOfTrackEvent()
         program_number = 1
 
-        midi_event = Midi_Event(event, program_number)
+        midi_event = Encapsulated_Midi_Event(event, program_number)
 
         assert midi_event.program_name == "None"
 
@@ -70,41 +70,41 @@ class TestMidiEvent:
         event = midi.TimeSignatureEvent()
         program_number = 1
 
-        midi_event = Midi_Event(event, program_number)
+        midi_event = Encapsulated_Midi_Event(event, program_number)
 
         assert midi_event.program_name == "None"
 
     #  Midi_Event Program Number and name default to None if Program number is not between 0 and 127
     def test_program_number_out_of_bounds(self):
-        midi_event = Midi_Event(midi.Event(), program_number=-5)
+        midi_event = Encapsulated_Midi_Event(midi.Event(), program_number=-5)
 
         assert midi_event.program_number == None
         assert midi_event.program_name == "None"
 
-        midi_event = Midi_Event(midi.Event(), program_number=-1)
+        midi_event = Encapsulated_Midi_Event(midi.Event(), program_number=-1)
 
         assert midi_event.program_number == None
         assert midi_event.program_name == "None"
 
-        midi_event = Midi_Event(midi.Event(), program_number=128)
+        midi_event = Encapsulated_Midi_Event(midi.Event(), program_number=128)
 
         assert midi_event.program_number == None
         assert midi_event.program_name == "None"
 
     def test_raises_type_error(self):
         with pytest.raises(TypeError):
-            Midi_Event("midi_event", 35)
+            Encapsulated_Midi_Event("midi_event", 35)
 
 
         with pytest.raises(TypeError):
-            Midi_Event({}, 35)
+            Encapsulated_Midi_Event({}, 35)
 
     #  Midi_Event produces str and repr
     def test_str_and_repr(self):
         event = midi.Event()
         program_number = 1
 
-        midi_event = Midi_Event(event, program_number)
+        midi_event = Encapsulated_Midi_Event(event, program_number)
 
         assert str(midi_event) == f"\n\n\n\n***MIDI_EVENT***\nProgram number: {program_number}\nProgram name: 1 - Bright Acoustic\nEvent: {event}\n****************"
         assert repr(midi_event) == f"\n\n\n\n***MIDI_EVENT***\nProgram number: {program_number}\nProgram name: 1 - Bright Acoustic\nEvent: {event}\n****************"

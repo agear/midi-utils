@@ -7,10 +7,10 @@ from typing import List, Optional
 import midi
 
 
-import midi_event
+import encapsulated_midi_event
 import sf2_loader as sf
-from midi_event import Midi_Event
-from midi_track_ag import Midi_Track_AG
+from encapsulated_midi_event import Encapsulated_Midi_Event
+from encapsulated_midi_track import Encapsulated_Midi_Track
 from percussion_instrument import Percussion_Instrument
 from program import Program
 
@@ -43,7 +43,8 @@ class Controller:
         self.stems_path: str = base_path + f"/{self.songname}"
         self.transport_track: midi.Track = midi.Track()
         self._make_directories()
-        self.encapsulated_midi: List[Midi_Track_AG] = []
+        self.encapsulated_midi: List[Encapsulated_Midi_Track] = []
+        # self.encapsulated_midi: List[Encapsulated_Midi_Track] = self.encapsulate_midi()
 
 
     def _make_directories(self) -> None:

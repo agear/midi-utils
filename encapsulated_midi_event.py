@@ -4,7 +4,7 @@ from programs import PROGRAMS, PERCUSSION
 from typing import Optional
 
 
-class Midi_Event:
+class Encapsulated_Midi_Event:
     """
         The Midi_Event class represents a MIDI event and its associated program number and program name.
 
@@ -60,8 +60,8 @@ class Midi_Event:
         if program_number is not None:
             if not(0 <= program_number <= 127):
                 program_number = None
-        if not isinstance(event, Midi_Event.ALLOWED_EVENT_TYPES):
-            raise TypeError("event must be an instance of midi.Event or a subclass thereof")
+        if not isinstance(event, Encapsulated_Midi_Event.ALLOWED_EVENT_TYPES):
+            raise TypeError(f"event must be an instance of midi.Event or a subclass thereof. Received: {type(event)}")
         self.event: midi.Event = event
         self.program_number: Optional[int] = program_number
         self.program_name: str = self._get_program_name()
