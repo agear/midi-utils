@@ -2,7 +2,7 @@ import os
 from typing import List
 from copy import deepcopy
 import midi
-from midi_event import Midi_Event
+from encapsulated_midi_event import Encapsulated_Midi_Event
 from percussion_instrument import Percussion_Instrument
 
 class Midi_Track_AG:
@@ -26,8 +26,8 @@ class Midi_Track_AG:
         # Get the list of percussion instruments in the track
         percussion_instruments = Midi_Track_AG.get_percussion_instruments(track)
     """
-    def __init__(self, events: List[Midi_Event], track_number: int, controller):
-        self.events: List[Midi_Event] = events
+    def __init__(self, events: midi.Track, track_number: int, controller):
+        self.events: List[Encapsulated_Midi_Event] = self.encapsulate_midi_events(track=events, track_number=track_number)
         self.programs: List[str] = self._get_program_names()
         self.transport_track = controller.transport_track
         self.resolution: int = controller.resolution
