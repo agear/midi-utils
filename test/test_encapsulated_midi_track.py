@@ -1,12 +1,12 @@
 import pytest
 from encapsulated_midi_event import Encapsulated_Midi_Event
 from controller import Controller
-from midi_track_ag import Midi_Track_AG
+from encapsulated_midi_track import Encapsulated_Midi_Track
 import midi
 from config import soundfont_path
 
 
-class TestMidiTrackAg:
+class TestEncapsulatedMidiTrack:
     midi_file_path: str = "/Users/agear/Documents/Projects/Programming/Python/midi-utils/test/test_files/test_file.mid"
     soundfont_path: str = soundfont_path
     convert_to_wav: bool = True
@@ -21,10 +21,35 @@ class TestMidiTrackAg:
     events = midifile[2]
 
     def test_init(self):
-        track = Midi_Track_AG(events=TestMidiTrackAg.midifile[3], track_number=1, controller=TestMidiTrackAg.controller)
+        track = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[3], track_number=1,
+                                        controller=TestEncapsulatedMidiTrack.controller)
 
+        assert track.events
+        assert track.programs
+        assert track.transport_track == TestEncapsulatedMidiTrack.controller.transport_track
+        assert track.resolution == TestEncapsulatedMidiTrack.controller.resolution
+        assert track.midi_stem_path == TestEncapsulatedMidiTrack.controller.midi_stem_path
+        assert track.songname == "test_file"
         assert track.track_number == "02"
+        # assert track.patterns
+        assert track.drums == ""
+        assert not track.is_drums
         # assert track.events == TestMidiTrackAg.events
+        # TODO: add mort asserts
+
+
+    def test_is_drum_track(self):
+        track_not_drums = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[3], track_number=1,
+                                        controller=TestEncapsulatedMidiTrack.controller)
+
+        assert track_not_drums._is_drum_track() == ""
+
+        track_drums = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[15], track_number=1,
+                                        controller=TestEncapsulatedMidiTrack.controller)
+
+        assert track_not_drums._is_drum_track() == "- 0 - Drum Kit 0 "
+
+
 
     # #  Midi_Track_AG can be initialized with a list of Midi_Event objects, a track number, and a controller object.
     # def test_initialized_with_list_of_midi_events(self):
