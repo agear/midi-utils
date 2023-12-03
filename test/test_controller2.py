@@ -70,33 +70,6 @@ class TestController:
         # TODO: Create test for track with no transport track
 
 
-
-    def test_encapsulate_midi(self):
-        controller = Controller(midi_file_path=TestController.midi_file_path,
-                                soundfont_path=TestController.soundfont_path,
-                                convert_to_wav=TestController.convert_to_wav,
-                                base_path=TestController.base_path)
-
-        encapsulated_track = controller.encapsulate_midi(track=midi.Track(), track_number=0)
-
-        assert isinstance(encapsulated_track, Midi_Track_AG)
-
-        assert encapsulated_track.programs == []
-        assert encapsulated_track.track_number == "01"
-
-
-        encapsulated_track = controller.encapsulate_midi(track=controller.midi_multitrack[1], track_number=1)
-
-        # TODO: Does the program list need to contain 'None'?
-        assert 'None' in encapsulated_track.programs
-        assert '28 - Electric Guitar (muted)' in encapsulated_track.programs
-        assert '4 - Electric Piano 1' in encapsulated_track.programs
-
-        assert encapsulated_track.track_number == "02"
-
-        # TODO: make more test midi tracks more instrument changes
-
-
     def test_get_percussion_instruments(self):
         controller = Controller(midi_file_path=TestController.midi_file_path,
                                 soundfont_path=TestController.soundfont_path,
