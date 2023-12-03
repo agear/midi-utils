@@ -1,7 +1,7 @@
 import pytest
 from controller import Controller
-from midi_track_ag import Midi_Track_AG
-from midi_event import Midi_Event
+from encapsulated_midi_track import Encapsulated_Midi_Track
+from encapsulated_midi_event import Encapsulated_Midi_Event
 import midi
 import sf2_loader as sf
 import os
