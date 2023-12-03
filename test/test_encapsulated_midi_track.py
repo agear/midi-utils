@@ -52,6 +52,50 @@ class TestEncapsulatedMidiTrack:
         assert track_drums._is_drum_track() == "- 0 - Drum Kit 0 "
 
 
+    def test_get_program_names(self):
+        track = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[3], track_number=3,
+                                        controller=TestEncapsulatedMidiTrack.controller)
+
+        assert 'None' in track._get_program_names()
+        assert '39 - Synth Bass 2' in track._get_program_names()
+
+        track = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[1], track_number=1,
+                                        controller=TestEncapsulatedMidiTrack.controller)
+
+        assert 'None' in track._get_program_names()
+        assert '4 - Electric Piano 1' in track._get_program_names()
+        assert '28 - Electric Guitar (muted)' in track._get_program_names()
+
+
+    def test_get_formatted_track_number(self):
+        track = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[3], track_number=3,
+                                        controller=TestEncapsulatedMidiTrack.controller)
+
+        assert track._get_formatted_track_number(i=3) == "04"
+
+        # TODO: Add error handling -- track number can't be negative
+        # assert track._get_formatted_track_number(i=-1) == "04"
+
+        assert track._get_formatted_track_number(i=0) == "01"
+        assert track._get_formatted_track_number(i=1) == "02"
+        assert track._get_formatted_track_number(i=2) == "03"
+        assert track._get_formatted_track_number(i=3) == "04"
+        assert track._get_formatted_track_number(i=4) == "05"
+        assert track._get_formatted_track_number(i=5) == "06"
+        assert track._get_formatted_track_number(i=6) == "07"
+        assert track._get_formatted_track_number(i=7) == "08"
+        assert track._get_formatted_track_number(i=8) == "09"
+        assert track._get_formatted_track_number(i=9) == "10"
+        assert track._get_formatted_track_number(i=10) == "11"
+        assert track._get_formatted_track_number(i=11) == "12"
+        assert track._get_formatted_track_number(i=12) == "13"
+        assert track._get_formatted_track_number(i=13) == "14"
+        assert track._get_formatted_track_number(i=14) == "15"
+        assert track._get_formatted_track_number(i=15) == "16"
+        assert track._get_formatted_track_number(i=16) == "17"
+        assert track._get_formatted_track_number(i=17) == "18"
+        assert track._get_formatted_track_number(i=18) == "19"
+        assert track._get_formatted_track_number(i=19) == "20"
 
 
     # #  Midi_Track_AG can be initialized with a list of Midi_Event objects, a track number, and a controller object.
