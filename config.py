@@ -1,6 +1,8 @@
 from typing import List
 
 convert_to_wav: bool = True
+soundfont_path: str = "/Users/agear/Documents/Projects/AGM/soundfont/gm.sf2"
+base_path: str = "/Users/agear/Documents/Projects/Programming/Python/midi-utils/stems"
 midi_file_paths: List[str] = [
                               # "/Users/agear/Documents/Projects/AGM/percussion_test.mid",
                               # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aphids/Aphids2.mid",
@@ -8,11 +10,11 @@ midi_file_paths: List[str] = [
                               # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aleksei's Visions of Chess War/Aleksei's Visions of Chess War.mid",
                               # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/The Human Body (Can Run On Sugar Alone Goddamnit!)/The human body can run on sugar alone, God damn it!8.mid",
                               #
-                                "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/fusion solo.mid",
-                                "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/Something I'm working onnow.mid",
-                                "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/Something I'm working onnow2.mid",
-                                "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/newcooltingy.mid",
-                                "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/gershwin_rhapsody.mid",
+                                # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/fusion solo.mid",
+                                # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/Something I'm working onnow.mid",
+                                # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/Something I'm working onnow2.mid",
+                                # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/newcooltingy.mid",
+                                # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/gershwin_rhapsody.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/Something I'm working on.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/wingfort.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/Bands/Opeth/Credence.mid",
@@ -76,7 +78,7 @@ midi_file_paths: List[str] = [
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/If you dont know side stick.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/I met a ghost2.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/If you don't know where you're going, you'll wind up som (1).mid",
-                                # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Kyyti.mid",
+                                "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Kyyti.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Kelvata4.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Music can express nothing but itself2.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Man created beauty to repress truth.mid",
