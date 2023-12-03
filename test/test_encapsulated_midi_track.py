@@ -39,15 +39,18 @@ class TestEncapsulatedMidiTrack:
 
 
     def test_is_drum_track(self):
-        track_not_drums = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[3], track_number=1,
+
+
+        track_not_drums = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[3], track_number=3,
                                         controller=TestEncapsulatedMidiTrack.controller)
 
         assert track_not_drums._is_drum_track() == ""
 
-        track_drums = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[15], track_number=1,
+        track_drums = Encapsulated_Midi_Track(events=TestEncapsulatedMidiTrack.midifile[13], track_number=13,
                                         controller=TestEncapsulatedMidiTrack.controller)
 
-        assert track_not_drums._is_drum_track() == "- 0 - Drum Kit 0 "
+        assert track_drums._is_drum_track() == "- 0 - Drum Kit 0 "
+
 
 
 
