@@ -35,12 +35,22 @@ class Controller:
             base_path (str, optional): Base path for storing stems, Defaults to current directory (".").
         """
         self.midi_file_path: str = midi_file_path
+        print(f"MIDI_file_path = {midi_file_path}")
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
+        print(f"self.songname = {self.songname}")
         self.convert_to_wav_flag: bool = convert_to_wav # In the controller this is only used for creating a file path
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
-        self.stems_path: str = base_path + f"/{self.songname}"
+        self.stems_path: str = os.path.dirname(base_path) + os.sep
+        print("#########################")
+        print(self.stems_path)
+        print("#########################")
+        self.stems_path: str = self.stems_path + f"{self.songname} Stems"
+        print("#########################")
+        print(self.stems_path)
+        print("#########################")
+        # self.stems_path: str = base_path + f"/{self.songname}"
         self.transport_track: midi.Track = midi.Track()
         self._make_directories()
         self.encapsulated_midi: List[Encapsulated_Midi_Track] = []
