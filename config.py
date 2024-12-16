@@ -2,8 +2,12 @@ from typing import List
 
 convert_to_wav: bool = True
 soundfont_path: str = "/Users/agear/Documents/Projects/AGM/soundfont/gm.sf2"
-base_path: str = "/Users/agear/Documents/Projects/Programming/Python/midi-utils/stems"
+base_path: str = "/Volumes/AGM/Stems"
+# base_path: str = "/Users/agear/Documents/Projects/Programming/Python/midi-utils/stems"
 midi_file_paths: List[str] = [
+                                "/Volumes/AGM/Macintosh HD/Users/agear/Documents/Projects/AGM/agm_copy/Guitar Pro PDFs/Finished/0.7/0.7.mid",
+                                "/Volumes/AGM/Macintosh HD/Users/agear/Documents/Projects/AGM/agm_copy/Guitar Pro PDFs/Finished/0.7/0.71.mid",
+                                # "/Users/agear/Desktop/rockin beat.mid",
                               # "/Users/agear/Documents/Projects/AGM/percussion_test.mid",
                               # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aphids/Aphids2.mid",
                               # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/0.7/0.71.mid",
@@ -78,7 +82,7 @@ midi_file_paths: List[str] = [
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/If you dont know side stick.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/I met a ghost2.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/If you don't know where you're going, you'll wind up som (1).mid",
-                                "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Kyyti.mid",
+                                # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Kyyti.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Kelvata4.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Music can express nothing but itself2.mid",
                                 # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/From CD/Guitar pro mix and match/0Temp/00a/Neljä naista vetenä tulivat/Man created beauty to repress truth.mid",

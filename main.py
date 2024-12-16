@@ -65,7 +65,7 @@ if __name__ == "__main__":
         main(midi_file_path=midi_file_path,
              soundfont_path=soundfont_path,
              convert_to_wav=convert_to_wav,
-             base_path=base_path)
+             base_path=midi_file_path)
 
     # Grab current time after running the code
     end: float = time.perf_counter()
