@@ -4,6 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+**Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+**Run the web UI (from the repo root):**
+```bash
+uvicorn api.main:app --reload
+```
+Then open http://localhost:8000.
+
+**Run the CLI script directly:**
+```bash
+python main.py
+```
+
 **Run all tests:**
 ```bash
 pytest test/
@@ -17,16 +33,6 @@ pytest test/test_encapsulated_midi_track.py
 **Run a single test:**
 ```bash
 pytest test/test_controller.py::TestController::test_init
-```
-
-**Run the main script:**
-```bash
-python main.py
-```
-
-**Install dependencies:**
-```bash
-pip install -r requirements.txt
 ```
 
 ## Architecture
@@ -60,3 +66,18 @@ For a file `MySong.mid` processed with `base_path = "/Volumes/AGM/Stems"`:
 ### Hardcoded paths
 
 `config.py` contains machine-specific paths (`soundfont_path`, `base_path`, `midi_file_paths`). These are not parameterized and must be edited directly for each environment.
+
+## Web UI
+
+```
+api/
+  main.py      ← FastAPI app: /upload, /extract, /download/{job_id}
+  schemas.py   ← Pydantic models for request/response
+static/
+  index.html   ← Single-page UI (drag-drop upload, settings form, results list)
+  app.js       ← Frontend: fetch calls to API, renders stem download links
+```
+
+**Flow:** browser uploads `.mid` → `/upload` returns `file_id` → `/extract` runs `Controller`, copies output to `base_path`, returns stem list → each stem has a `/download/{job_id}?path=…` link.
+
+Uploaded files and job outputs are stored in-memory (`_uploaded_files`, `_job_outputs` dicts in `api/main.py`). They are lost on server restart — this is intentional for a local dev tool.
