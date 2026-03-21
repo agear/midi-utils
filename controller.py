@@ -146,8 +146,8 @@ class Controller:
 
         for filename in os.listdir(path):
             f = os.path.join(path, filename)
-            if os.path.isfile(f) and f[-4:] == self.file_extension:
-                stem_name = filename[:-4]
+            stem_name, ext = os.path.splitext(filename)
+            if os.path.isfile(f) and ext == self.file_extension:
                 logger.info("Rendering %s -> %s.wav", filename, stem_name)
                 self.loader.export_midi_file(fr'{f}', name=f'{self.audio_stem_path}/{stem_name}.wav', format='wav')
             else:
