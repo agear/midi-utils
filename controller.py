@@ -1,12 +1,7 @@
 import os
-import shutil
-from copy import deepcopy
 from typing import List, Optional
 
 import midi
-
-
-import encapsulated_midi_event
 import sf2_loader as sf
 from encapsulated_midi_event import Encapsulated_Midi_Event
 from encapsulated_midi_track import Encapsulated_Midi_Track
@@ -34,26 +29,15 @@ class Controller:
             base_path (str, optional): Base path for storing stems, Defaults to current directory (".").
         """
         self.midi_file_path: str = midi_file_path
-        print(f"MIDI_file_path = {midi_file_path}")
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
-        print(f"self.songname = {self.songname}")
-        self.convert_to_wav_flag: bool = convert_to_wav # In the controller this is only used for creating a file path
+        self.convert_to_wav_flag: bool = convert_to_wav
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
-        self.stems_path: str = os.path.dirname(base_path) + os.sep
-        print("#########################")
-        print(self.stems_path)
-        print("#########################")
-        self.stems_path: str = self.stems_path + f"{self.songname} Stems"
-        print("#########################")
-        print(self.stems_path)
-        print("#########################")
-        # self.stems_path: str = base_path + f"/{self.songname}"
+        self.stems_path: str = os.path.dirname(base_path) + os.sep + f"{self.songname} Stems"
         self.transport_track: midi.Track = midi.Track()
         self._make_directories()
         self.encapsulated_midi: List[Encapsulated_Midi_Track] = []
-        # self.encapsulated_midi: List[Encapsulated_Midi_Track] = self.encapsulate_midi()
 
 
     def _make_directories(self) -> None:
@@ -68,20 +52,15 @@ class Controller:
             os.makedirs(name=self.audio_stem_path, exist_ok=True)
 
 
-    # MIDI STUFF
-
     def _get_transport_track(self) -> None:
         """
         Find the transport track in the MIDI multitrack.
         """
-        # TODO: why is this enumerate?
         for track_number, track in enumerate(self.midi_multitrack):
             track_names = self.get_track_names(track=track)
             if len(track_names) == 0:
-                print(f"Track {track_number} is the transport")
                 self.transport_track = track
                 return
-        print("No transport track")
 
     def extract_midi_stems(self) -> None:
         """
@@ -146,8 +125,6 @@ class Controller:
 
         return programs
 
-    # WAV STUFF
-
     def convert_to_wav(self, path: str) -> None:
         """
             Convert MIDI files to WAV format.
@@ -155,23 +132,14 @@ class Controller:
             Args:
                 path (str): Path to the MIDI files.
         """
-        print("Starting conversion to .wav")
-
-        # path: str = self.midi_stem_path
-
-        # Bounce multitrack
+        # Bounce full multitrack
         self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All.wav', format='wav')
 
         for filename in os.listdir(path):
             f = os.path.join(path, filename)
-            # checking if it is a file
             if os.path.isfile(f) and f[-4:] == self.file_extension:
-                print(filename)
-                filename = filename[:-4]
-
-                self.loader.export_midi_file(fr'{f}', name=f'{self.audio_stem_path}/{filename}.wav', format='wav')
-                print(f"Converting {filename} to {self.audio_stem_path}/{filename}.wav")
+                stem_name = filename[:-4]
+                self.loader.export_midi_file(fr'{f}', name=f'{self.audio_stem_path}/{stem_name}.wav', format='wav')
             else:
-                print(f'dir: {filename}')
                 self.convert_to_wav(path=f"{self.midi_stem_path}/{filename}")
 
