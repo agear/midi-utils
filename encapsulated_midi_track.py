@@ -37,7 +37,7 @@ class Encapsulated_Midi_Track:
         self.track_number: str = self._get_formatted_track_number(i=track_number)
         self.patterns: List[midi.Pattern] = []
         self.drums: str = self._is_drum_track()
-        self.is_drums: bool = False
+        self.is_drums: bool = bool(self.drums)
         self.extract_programs()
 
     # TODO: refactor encapsulare_midi from controller class
@@ -110,9 +110,6 @@ class Encapsulated_Midi_Track:
     def extract_programs(self):
         """Extracts programs from the track and creates MIDI patterns for each program."""
         print("Extracting programs...")
-        if self.is_drums:
-            self.controller.extract_midi_drum_stems(i=self.track_number, track=self.events)
-
         for program_name in self.programs:
             if program_name == 'None':
                 print("Program is none")
