@@ -56,27 +56,29 @@ class Controller:
             os.makedirs(name=self.audio_stem_path, exist_ok=True)
 
 
-    def _get_transport_track(self) -> None:
+    def _find_transport_track(self) -> Optional[midi.Track]:
         """
-        Find the transport track in the MIDI multitrack.
+        Return the first track that contains no program changes (the transport/
+        tempo track), or None if every track has at least one program change.
         """
         for track_number, track in enumerate(self.midi_multitrack):
-            track_names = self.get_track_names(track=track)
-            if len(track_names) == 0:
+            if not self.get_track_names(track=track):
                 logger.debug("Track %d identified as transport track", track_number)
-                self.transport_track = track
-                return
+                return track
         logger.warning("No transport track found in %s", self.midi_file_path)
+        return None
 
     def extract_midi_stems(self) -> None:
         """
         Extract MIDI stems from the multitrack and save them as separate MIDI files.
         """
-        self._get_transport_track()
+        transport = self._find_transport_track()
+        if transport is not None:
+            self.transport_track = transport
 
         track_number: int = 0
-        for track in (self.midi_multitrack):
-            if track == self.transport_track: # This fixes the track numbering bug.
+        for track in self.midi_multitrack:
+            if track == self.transport_track:
                 continue
             self.encapsulated_midi.append(Encapsulated_Midi_Track(events=track, track_number=track_number, controller=self))
             track_number += 1
