@@ -1,5 +1,3 @@
-# from programs import PROGRAMS
-
 class Program:
     """
     The Program class is a Python class that represents a musical program. It has a constructor that takes a program
