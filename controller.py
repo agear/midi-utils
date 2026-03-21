@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import List, Optional
 
@@ -8,6 +9,7 @@ from encapsulated_midi_track import Encapsulated_Midi_Track
 from percussion_instrument import Percussion_Instrument
 from program import Program
 
+logger = logging.getLogger(__name__)
 
 
 class Controller:
@@ -30,11 +32,13 @@ class Controller:
         """
         self.midi_file_path: str = midi_file_path
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
+        logger.info("Loading %s", midi_file_path)
         self.convert_to_wav_flag: bool = convert_to_wav
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
         self.stems_path: str = os.path.dirname(base_path) + os.sep + f"{self.songname} Stems"
+        logger.debug("Stems path: %s", self.stems_path)
         self.transport_track: midi.Track = midi.Track()
         self._make_directories()
         self.encapsulated_midi: List[Encapsulated_Midi_Track] = []
@@ -59,8 +63,10 @@ class Controller:
         for track_number, track in enumerate(self.midi_multitrack):
             track_names = self.get_track_names(track=track)
             if len(track_names) == 0:
+                logger.debug("Track %d identified as transport track", track_number)
                 self.transport_track = track
                 return
+        logger.warning("No transport track found in %s", self.midi_file_path)
 
     def extract_midi_stems(self) -> None:
         """
@@ -132,6 +138,7 @@ class Controller:
             Args:
                 path (str): Path to the MIDI files.
         """
+        logger.info("Starting WAV conversion for %s", path)
         # Bounce full multitrack
         self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All.wav', format='wav')
 
@@ -139,6 +146,7 @@ class Controller:
             f = os.path.join(path, filename)
             if os.path.isfile(f) and f[-4:] == self.file_extension:
                 stem_name = filename[:-4]
+                logger.info("Rendering %s -> %s.wav", filename, stem_name)
                 self.loader.export_midi_file(fr'{f}', name=f'{self.audio_stem_path}/{stem_name}.wav', format='wav')
             else:
                 self.convert_to_wav(path=f"{self.midi_stem_path}/{filename}")

@@ -1,10 +1,13 @@
+import logging
 import os
-from typing import List
 from copy import deepcopy
+from typing import List, Optional
+
 import midi
 from encapsulated_midi_event import Encapsulated_Midi_Event
 from percussion_instrument import Percussion_Instrument
-from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 class Encapsulated_Midi_Track:
     """
@@ -80,7 +83,7 @@ class Encapsulated_Midi_Track:
                 pass
 
 
-        print(f'Programs: {list(program_names)}')
+        logger.debug("Programs found: %s", list(program_names))
         return list(program_names)
 
     def _get_formatted_track_number(self, i: int) -> str:
@@ -119,6 +122,7 @@ class Encapsulated_Midi_Track:
         for pattern in self.patterns:
             instrument_name = pattern[0]
             filename: str = f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {instrument_name}.mid"
+            logger.info("Writing stem: %s", filename)
             midi.write_midifile(filename, pattern[1])
 
     def extract_midi_drum_stems(self, i: int, track: midi.Track) -> None:
@@ -146,7 +150,9 @@ class Encapsulated_Midi_Track:
                     event_copy.event.data[1] = 0  # mute other drum instruments
                 percussion_track.append(event_copy.event)
             pattern.append(percussion_track)
-            midi.write_midifile(f"{percussion_path}/{self.songname} - {self.track_number} - 0 - Drum Kit 0 - {instrument.name}.mid", pattern)
+            out = f"{percussion_path}/{self.songname} - {self.track_number} - 0 - Drum Kit 0 - {instrument.name}.mid"
+            logger.info("Writing drum stem: %s", out)
+            midi.write_midifile(out, pattern)
 
     @staticmethod
     def get_percussion_instruments(track: midi.Track) -> List[Percussion_Instrument]:
