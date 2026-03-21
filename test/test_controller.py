@@ -87,21 +87,21 @@ class TestMakeDirectories:
 
 
 # ---------------------------------------------------------------------------
-# _get_transport_track
+# _find_transport_track
 # ---------------------------------------------------------------------------
 
-class TestGetTransportTrack:
-    def test_identifies_transport_track(self, simple_controller):
-        simple_controller._get_transport_track()
-        # The simple pattern has a transport track (no program changes) at index 0
-        assert len(simple_controller.transport_track) > 0
+class TestFindTransportTrack:
+    def test_returns_transport_track(self, simple_controller):
+        track = simple_controller._find_transport_track()
+        assert track is not None
+        assert len(track) > 0
 
-    def test_transport_track_has_no_program_changes(self, simple_controller):
-        simple_controller._get_transport_track()
-        for event in simple_controller.transport_track:
+    def test_returned_track_has_no_program_changes(self, simple_controller):
+        track = simple_controller._find_transport_track()
+        for event in track:
             assert not isinstance(event, midi.ProgramChangeEvent)
 
-    def test_no_transport_track_leaves_empty(
+    def test_no_transport_track_returns_none(
             self, no_transport_midi_file, tmp_path, soundfont_path):
         c = Controller(
             midi_file_path=no_transport_midi_file,
@@ -109,15 +109,12 @@ class TestGetTransportTrack:
             convert_to_wav=False,
             base_path=str(tmp_path / "placeholder"),
         )
-        c._get_transport_track()
-        # When no transport track exists the attribute stays as the initial empty Track
-        assert isinstance(c.transport_track, midi.Track)
+        assert c._find_transport_track() is None
 
     def test_multi_track_transport_identified(self, multi_controller):
-        multi_controller._get_transport_track()
-        # Transport is the first track (tempo only)
-        assert any(isinstance(e, midi.SetTempoEvent)
-                   for e in multi_controller.transport_track)
+        track = multi_controller._find_transport_track()
+        assert track is not None
+        assert any(isinstance(e, midi.SetTempoEvent) for e in track)
 
 
 # ---------------------------------------------------------------------------
