@@ -77,10 +77,8 @@ class Encapsulated_Midi_Track:
         """Retrieves the unique program names from the MIDI events in the track."""
         program_names = set()
         for event in self.events:
-            try:
+            if hasattr(event, "program_name"):
                 program_names.add(event.program_name)
-            except AttributeError:
-                pass
 
 
         logger.debug("Programs found: %s", list(program_names))
