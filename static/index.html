@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MIDI Stem Extractor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container { width: 100%; max-width: 680px; }
+
+    h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 0.25rem; color: #fff; }
+    .subtitle { color: #888; font-size: 0.9rem; margin-bottom: 2rem; }
+
+    /* ── Card ── */
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6c8ebf;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Dropzone ── */
+    #dropzone {
+      border: 2px dashed #3a3d4e;
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+    #dropzone:hover, #dropzone.drag-over {
+      border-color: #6c8ebf;
+      background: #1f2335;
+      color: #e0e0e0;
+    }
+    #dropzone .icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+
+    /* ── Extract button ── */
+    #extractBtn {
+      width: 100%;
+      padding: 0.7rem;
+      background: #6c8ebf;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      margin-bottom: 1.25rem;
+    }
+    #extractBtn:hover:not(:disabled) { background: #7fa3d4; }
+    #extractBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Status box ── */
+    .status-box {
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.88rem;
+      margin-bottom: 1.25rem;
+    }
+    .status-info    { background: #1a2744; border: 1px solid #3a5a8a; color: #9bb8e0; }
+    .status-success { background: #162d20; border: 1px solid #2a6040; color: #7dbf9e; }
+    .status-error   { background: #2d1616; border: 1px solid #6b2a2a; color: #e07d7d; }
+
+    /* ── Queue items ── */
+    .queue-item {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .qi-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .qi-badge {
+      flex-shrink: 0;
+      font-size: 0.8rem;
+      font-weight: 700;
+      width: 20px;
+      text-align: center;
+    }
+    .qi-toggle {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: #555;
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 0.1rem 0.3rem;
+      transition: color 0.15s;
+      margin-left: auto;
+    }
+    .qi-toggle:hover { color: #9bb8e0; }
+
+    .qi-badge-pending   { color: #555; }
+    .qi-badge-uploading { color: #9bb8e0; }
+    .qi-badge-extracting { color: #9bb8e0; }
+    .qi-badge-done      { color: #7dbf9e; }
+    .qi-badge-error     { color: #e07d7d; }
+
+    .qi-name {
+      flex: 1;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #ddd;
+      word-break: break-all;
+    }
+
+    .qi-msg {
+      font-size: 0.78rem;
+      color: #888;
+      flex-shrink: 0;
+    }
+    .qi-badge-error + .qi-name + .qi-msg,
+    .queue-item.status-error .qi-msg { color: #e07d7d; }
+
+    /* ── Per-item progress bar ── */
+    .qi-progress-wrap { margin-top: 0.6rem; }
+    .qi-progress-label { font-size: 0.75rem; color: #9bb8e0; margin-bottom: 0.3rem; }
+    .progress-track {
+      background: #1a2744;
+      border: 1px solid #2a3d5a;
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4a72a8, #7fa3d4);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Stems section ── */
+    .qi-stems { margin-top: 1rem; }
+
+    .group-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #6c8ebf;
+      margin: 0.75rem 0 0.4rem;
+    }
+    .group-label:first-child { margin-top: 0; }
+
+    ul.stem-list { list-style: none; }
+
+    .stem-row {
+      display: flex;
+      flex-direction: column;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid #2a2d3a;
+    }
+    .stem-row:last-child { border-bottom: none; }
+
+    .stem-row-top {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .stem-check {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      accent-color: #6c8ebf;
+      cursor: pointer;
+    }
+
+    .stem-name {
+      flex: 1;
+      font-size: 0.82rem;
+      color: #ccc;
+      word-break: break-all;
+    }
+
+    .play-btn {
+      flex-shrink: 0;
+      background: none;
+      border: 1px solid #3a5a8a;
+      border-radius: 5px;
+      color: #6c8ebf;
+      font-size: 0.68rem;
+      padding: 0.18rem 0.5rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .play-btn:hover { background: #1a2744; }
+
+    a.download-btn {
+      flex-shrink: 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #6c8ebf;
+      text-decoration: none;
+      border: 1px solid #3a5a8a;
+      border-radius: 5px;
+      padding: 0.18rem 0.5rem;
+      transition: background 0.15s;
+    }
+    a.download-btn:hover { background: #1a2744; }
+
+    .audio-wrap { margin-top: 0.45rem; padding-left: 1.4rem; }
+    .audio-wrap audio { width: 100%; height: 30px; accent-color: #6c8ebf; }
+
+    /* ── Per-stem progress bars ── */
+    .stem-bar {
+      height: 2px;
+      border-radius: 1px;
+      margin-top: 4px;
+      width: 100%;
+    }
+    .stem-bar-done {
+      background: #2a5a3a;
+    }
+    .stem-bar-active {
+      background: linear-gradient(90deg, transparent 0%, #6c8ebf 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s linear infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .stem-spinner {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+      color: #555;
+      font-size: 0.8rem;
+    }
+
+    /* ── Per-file actions ── */
+    .qi-actions-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.9rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid #2a2d3a;
+    }
+
+    .select-links { font-size: 0.78rem; color: #888; }
+    .select-links a { color: #6c8ebf; text-decoration: none; cursor: pointer; }
+    .select-links a:hover { text-decoration: underline; }
+
+    .dl-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .dl-btn {
+      padding: 0.4rem 0.85rem;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .dl-btn-primary { background: #6c8ebf; color: #fff; }
+    .dl-btn-primary:hover:not(:disabled) { background: #7fa3d4; }
+    .dl-btn-secondary { background: #1f2535; color: #9bb8e0; border: 1px solid #3a5a8a; }
+    .dl-btn-secondary:hover:not(:disabled) { background: #263047; }
+    .dl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MIDI Stem Extractor</h1>
+    <p class="subtitle">Split multitrack MIDI files into per-instrument stems.</p>
+
+    <!-- Upload -->
+    <div class="card">
+      <h2>MIDI Files</h2>
+      <div id="dropzone">
+        <span class="icon">🎵</span>
+        Drag &amp; drop one or more <strong>.mid</strong> files, or click to browse
+      </div>
+      <input type="file" id="fileInput" accept=".mid" multiple style="display:none" />
+    </div>
+
+    <!-- Extract -->
+    <button id="extractBtn" disabled>Extract</button>
+
+    <!-- Global status (errors / all-done) -->
+    <div id="statusBox" class="status-box status-info" hidden>
+      <span id="statusMsg"></span>
+    </div>
+
+    <!-- Per-file queue (rendered by JS) -->
+    <div id="queue"></div>
+
+    <!-- Global download (shown once any job completes) -->
+    <div id="globalActions" hidden style="margin-bottom:2rem;">
+      <button id="globalDlAll" class="dl-btn dl-btn-primary" style="width:100%;padding:0.75rem;font-size:1rem;">
+        Download All Files
+      </button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
