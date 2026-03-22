@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+import tempfile
 from typing import List, Optional
 
 import midi
@@ -37,7 +38,7 @@ class Controller:
         self.convert_to_wav_flag: bool = convert_to_wav
         self.soundfont_path: str = soundfont_path
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
-        self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
+        self.midi_multitrack: midi.Pattern = self._load_midi(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
         self.stems_path: str = os.path.dirname(base_path) + os.sep + f"{self.songname} Stems"
         logger.debug("Stems path: %s", self.stems_path)
@@ -45,6 +46,50 @@ class Controller:
         self._make_directories()
         self.encapsulated_midi: List[Encapsulated_Midi_Track] = []
 
+
+    @staticmethod
+    def _load_midi(path: str) -> midi.Pattern:
+        """
+        Read a MIDI file, automatically correcting a zero track-count header.
+
+        Some Guitar Pro exports write 0 in the MThd track-count field even
+        though the file contains valid MTrk chunks.  The Python MIDI library
+        honours that count literally and returns an empty Pattern, which causes
+        all downstream processing to silently produce no output.
+
+        When the header claims 0 tracks but the file contains at least one
+        MTrk chunk, the header bytes are patched in a temporary copy and the
+        corrected file is re-read.
+        """
+        pattern = midi.read_midifile(path)
+        if len(pattern) > 0:
+            return pattern
+
+        with open(path, 'rb') as f:
+            data = bytearray(f.read())
+
+        actual = data.count(b'MTrk')
+        if actual == 0:
+            raise ValueError(f"MIDI file contains no track data: {path}")
+
+        logger.warning(
+            "Corrupt MIDI header in %s: track count is 0 but %d MTrk chunk(s) found — patching and reloading",
+            path, actual,
+        )
+        # MThd layout: 4-byte tag | 4-byte length | 2-byte format | 2-byte ntracks | 2-byte division
+        # ntracks is at bytes 10–11
+        data[10] = (actual >> 8) & 0xFF
+        data[11] = actual & 0xFF
+
+        with tempfile.NamedTemporaryFile(suffix='.mid', delete=False) as tmp:
+            tmp.write(data)
+            tmp_path = tmp.name
+        try:
+            pattern = midi.read_midifile(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+        return pattern
 
     def _make_directories(self) -> None:
         """
