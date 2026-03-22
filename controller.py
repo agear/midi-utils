@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 from typing import List, Optional
 
 import midi
@@ -34,6 +35,7 @@ class Controller:
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
         logger.info("Loading %s", midi_file_path)
         self.convert_to_wav_flag: bool = convert_to_wav
+        self.soundfont_path: str = soundfont_path
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
@@ -133,31 +135,31 @@ class Controller:
 
         return programs
 
-    def _enable_reverb(self, midi_path: str) -> None:
+    def _render_to_wav(self, midi_path: str, wav_path: str, *, reverb: bool) -> None:
         """
-        Enable FluidSynth's reverb unit and configure per-channel send levels
-        by reading CC 91 values directly from the MIDI file.
+        Render a MIDI file to WAV using the FluidSynth CLI.
 
-        sf2_loader disables reverb globally on init and renders note-by-note
-        without forwarding CC events, so both must be done manually before
-        exporting a wet stem.
+        Using the CLI (rather than sf2_loader's note-by-note renderer) means
+        FluidSynth processes the full MIDI event stream natively — including
+        CC 91 (Reverb Send Level) — producing output identical to VLC.
+
+        Args:
+            midi_path: Path to the source MIDI file.
+            wav_path:  Destination WAV file path.
+            reverb:    True to render with reverb active; False to suppress it
+                       entirely (passes -R 0 -C 0 to FluidSynth).
         """
-        self.loader.change_setting('reverb.active', 1)
-        pattern = midi.read_midifile(midi_path)
-        for track in pattern:
-            for event in track:
-                if (type(event) == midi.ControlChangeEvent
-                        and event.data[0] == 91
-                        and event.data[1] > 0):
-                    self.loader.synth.cc(event.channel, 91, event.data[1])
-        logger.debug("Reverb enabled for rendering: %s", midi_path)
-
-    def _disable_reverb(self) -> None:
-        """Disable FluidSynth's reverb unit and zero CC 91 on all channels."""
-        self.loader.change_setting('reverb.active', 0)
-        for ch in range(16):
-            self.loader.synth.cc(ch, 91, 0)
-        logger.debug("Reverb disabled")
+        cmd = ['fluidsynth', '-ni', '-T', 'wav', '-F', wav_path]
+        if not reverb:
+            cmd += ['-R', '0', '-C', '0']
+        cmd += [self.soundfont_path, midi_path]
+        logger.info("Rendering %s", wav_path)
+        result = subprocess.run(cmd, capture_output=True)
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"FluidSynth failed rendering {midi_path}: "
+                f"{result.stderr.decode().strip()}"
+            )
 
     def convert_to_wav(self, path: str) -> None:
         """
@@ -169,27 +171,17 @@ class Controller:
         logger.info("Starting WAV conversion for %s", path)
         # Bounce full multitrack — split into wet/dry if reverb is present
         if Encapsulated_Midi_Track._has_reverb(self.midi_multitrack):
-            self._enable_reverb(self.midi_file_path)
-            logger.info("Rendering %s - All - wet.wav", self.songname)
-            self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All - wet.wav', format='wav')
-            self._disable_reverb()
-            logger.info("Rendering %s - All - dry.wav", self.songname)
-            self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All - dry.wav', format='wav')
+            self._render_to_wav(self.midi_file_path, f'{self.audio_stem_path}/{self.songname} - All - wet.wav', reverb=True)
+            self._render_to_wav(self.midi_file_path, f'{self.audio_stem_path}/{self.songname} - All - dry.wav', reverb=False)
         else:
-            logger.info("Rendering %s - All.wav", self.songname)
-            self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All.wav', format='wav')
+            self._render_to_wav(self.midi_file_path, f'{self.audio_stem_path}/{self.songname} - All.wav', reverb=False)
 
         for filename in os.listdir(path):
             f = os.path.join(path, filename)
             stem_name, ext = os.path.splitext(filename)
             if os.path.isfile(f) and ext == self.file_extension:
                 is_wet = stem_name.endswith(' - wet')
-                if is_wet:
-                    self._enable_reverb(f)
-                logger.info("Rendering %s -> %s.wav", filename, stem_name)
-                self.loader.export_midi_file(fr'{f}', name=f'{self.audio_stem_path}/{stem_name}.wav', format='wav')
-                if is_wet:
-                    self._disable_reverb()
+                self._render_to_wav(f, f'{self.audio_stem_path}/{stem_name}.wav', reverb=is_wet)
             else:
                 self.convert_to_wav(path=f"{self.midi_stem_path}/{filename}")
 
