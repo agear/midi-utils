@@ -56,7 +56,7 @@ This is a MIDI stem extraction utility. It reads multitrack MIDI files, separate
 
 ### Output structure
 
-For a file `MySong.mid` processed with `base_path = "/Volumes/AGM/Stems"`:
+For a file `MySong.mid` processed with `output_path = "/Volumes/AGM/Stems"`:
 ```
 /Volumes/AGM/Stems/MySong/
   midi_stems/    ← per-instrument .mid files
@@ -65,7 +65,7 @@ For a file `MySong.mid` processed with `base_path = "/Volumes/AGM/Stems"`:
 
 ### Hardcoded paths
 
-`config.py` contains machine-specific paths (`soundfont_path`, `base_path`, `midi_file_paths`). These are not parameterized and must be edited directly for each environment.
+`config.py` contains machine-specific paths (`soundfont_path`, `output_path`, `midi_file_paths`). These are not parameterized and must be edited directly for each environment.
 
 ## Web UI
 
@@ -78,6 +78,6 @@ static/
   app.js       ← Frontend: fetch calls to API, renders stem download links
 ```
 
-**Flow:** browser uploads `.mid` → `/upload` returns `file_id` → `/extract` runs `Controller`, copies output to `base_path`, returns stem list → each stem has a `/download/{job_id}?path=…` link.
+**Flow:** browser uploads `.mid` → `/upload` returns `file_id` → `/extract` runs `Controller`, copies output to `output_path`, returns stem list → each stem has a `/download/{job_id}?path=…` link.
 
 Uploaded files and job outputs are stored in-memory (`_uploaded_files`, `_job_outputs` dicts in `api/main.py`). They are lost on server restart — this is intentional for a local dev tool.

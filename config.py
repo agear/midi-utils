@@ -2,8 +2,8 @@ from typing import List
 
 convert_to_wav: bool = True
 soundfont_path: str = "/Users/agear/Documents/Projects/AGM/soundfont/gm.sf2"
-base_path: str = "/Volumes/AGM/Stems"
-# base_path: str = "/Users/agear/Documents/Projects/Programming/Python/midi-utils/stems"
+output_path: str = "/Volumes/AGM/Stems"
+# output_path: str = "/Users/agear/Documents/Projects/Programming/Python/midi-utils/stems"
 midi_file_paths: List[str] = [
                                 "/Volumes/AGM/Macintosh HD/Users/agear/Documents/Projects/AGM/agm_copy/Guitar Pro PDFs/Finished/0.7/0.7.mid",
                                 "/Volumes/AGM/Macintosh HD/Users/agear/Documents/Projects/AGM/agm_copy/Guitar Pro PDFs/Finished/0.7/0.71.mid",
