@@ -167,8 +167,17 @@ class Controller:
                 path (str): Path to the MIDI files.
         """
         logger.info("Starting WAV conversion for %s", path)
-        # Bounce full multitrack
-        self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All.wav', format='wav')
+        # Bounce full multitrack — split into wet/dry if reverb is present
+        if Encapsulated_Midi_Track._has_reverb(self.midi_multitrack):
+            self._enable_reverb(self.midi_file_path)
+            logger.info("Rendering %s - All - wet.wav", self.songname)
+            self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All - wet.wav', format='wav')
+            self._disable_reverb()
+            logger.info("Rendering %s - All - dry.wav", self.songname)
+            self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All - dry.wav', format='wav')
+        else:
+            logger.info("Rendering %s - All.wav", self.songname)
+            self.loader.export_midi_file(fr'{self.midi_file_path}', name=f'{self.audio_stem_path}/{self.songname} - All.wav', format='wav')
 
         for filename in os.listdir(path):
             f = os.path.join(path, filename)
