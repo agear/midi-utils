@@ -15,7 +15,7 @@ class TestMainFileValidation:
                 midi_file_path=str(tmp_path / "nonexistent.mid"),
                 soundfont_path=soundfont_path,
                 convert_to_wav=False,
-                base_path=str(tmp_path / "placeholder"),
+                output_path=str(tmp_path / "placeholder"),
             )
 
     def test_raises_if_soundfont_not_found(self, simple_midi_file, tmp_path):
@@ -24,7 +24,7 @@ class TestMainFileValidation:
                 midi_file_path=simple_midi_file,
                 soundfont_path=str(tmp_path / "missing.sf2"),
                 convert_to_wav=False,
-                base_path=str(tmp_path / "placeholder"),
+                output_path=str(tmp_path / "placeholder"),
             )
 
 
@@ -34,7 +34,7 @@ class TestMainExtraction:
             midi_file_path=simple_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         # Find any .mid files written under tmp_path
         mid_files = []
@@ -47,7 +47,7 @@ class TestMainExtraction:
             midi_file_path=simple_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         for root, _, files in os.walk(str(tmp_path)):
             for f in files:
@@ -60,6 +60,6 @@ class TestMainExtraction:
             midi_file_path=simple_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         assert result is None

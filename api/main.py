@@ -38,7 +38,7 @@ _uploaded_files: Dict[str, str] = {}
 #             "error": str|None, "song_name": str, "stems": list}
 _job_status: Dict[str, dict] = {}
 
-# job_id -> output directory (stable, under the user's base_path)
+# job_id -> output directory (stable, under the user's output_path)
 _job_outputs: Dict[str, str] = {}
 
 
@@ -120,7 +120,7 @@ def _extraction_worker(job_id: str, midi_path: str, req: ExtractRequest) -> None
             midi_file_path=midi_path,
             soundfont_path=_SOUNDFONT_PATH,
             convert_to_wav=req.convert_to_wav,
-            base_path=midi_path,
+            output_path=midi_path,
         )
 
         # Start directory watcher so stems appear in the UI as they're written

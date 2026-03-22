@@ -34,7 +34,7 @@ class TestControllerInit:
             midi_file_path=simple_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=True,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         assert c.convert_to_wav_flag is True
 
@@ -64,7 +64,7 @@ class TestControllerInit:
             midi_file_path=simple_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=True,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         assert os.path.isdir(c.audio_stem_path)
 
@@ -107,7 +107,7 @@ class TestFindTransportTrack:
             midi_file_path=no_transport_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         assert c._find_transport_track() is None
 
