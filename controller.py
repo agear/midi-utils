@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class Controller:
-    def __init__(self, midi_file_path: str, soundfont_path: str, convert_to_wav: bool, base_path: Optional[str]= "."):
+    def __init__(self, midi_file_path: str, soundfont_path: str, convert_to_wav: bool, output_path: Optional[str]= "."):
         """
         The Controller class is responsible for processing MIDI files. It extracts MIDI stems from a multitrack
         MIDI file and saves them as separate MIDI files. It also has the functionality to convert MIDI files
@@ -28,7 +28,7 @@ class Controller:
             midi_file_path (str): Path to MIDI file.
             soundfont_path (str): Path to Soundfont file used for rendering to WAV.
             convert_to_wav (bool):
-            base_path (str, optional): Base path for storing stems, Defaults to current directory (".").
+            output_path (str, optional): Output path for storing stems, Defaults to current directory (".").
         """
         self.midi_file_path: str = midi_file_path
         self.songname, self.file_extension = os.path.splitext(os.path.basename(midi_file_path))
@@ -37,7 +37,7 @@ class Controller:
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
         self.midi_multitrack: midi.Pattern = midi.read_midifile(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
-        self.stems_path: str = os.path.dirname(base_path) + os.sep + f"{self.songname} Stems"
+        self.stems_path: str = os.path.dirname(output_path) + os.sep + f"{self.songname} Stems"
         logger.debug("Stems path: %s", self.stems_path)
         self.transport_track: midi.Track = midi.Track()
         self._make_directories()

@@ -90,8 +90,8 @@ soundfont_path: str = "/path/to/your/soundfont.sf2"
 # A bundled soundfont is included:
 # soundfont_path = "soundfonts/gm.sf2"
 
-base_path: str = "/path/to/output/directory"
-# Stems are written under: <base_path>/<song name> Stems/
+output_path: str = "/path/to/output/directory"
+# Stems are written under: <output_path>/<song name> Stems/
 
 midi_file_paths: list = [
     "/path/to/Song1.mid",
@@ -103,7 +103,7 @@ midi_file_paths: list = [
 |---|---|
 | `convert_to_wav` | Whether to render each MIDI stem to WAV using the soundfont |
 | `soundfont_path` | Absolute path to a `.sf2` General MIDI soundfont |
-| `base_path` | Root directory where stem folders are created |
+| `output_path` | Root directory where stem folders are created |
 | `midi_file_paths` | List of MIDI files to process |
 
 The repository includes a bundled General MIDI soundfont at `soundfonts/gm.sf2`, so no external soundfont download is required.
@@ -143,7 +143,7 @@ Uploaded files and job outputs are held in memory and are lost on server restart
 
 ## Output structure
 
-For a file `MySong.mid` with `base_path = "/Volumes/Stems"`:
+For a file `MySong.mid` with `output_path = "/Volumes/Stems"`:
 
 ```
 /Volumes/Stems/MySong Stems/
