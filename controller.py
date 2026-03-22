@@ -133,6 +133,32 @@ class Controller:
 
         return programs
 
+    def _enable_reverb(self, midi_path: str) -> None:
+        """
+        Enable FluidSynth's reverb unit and configure per-channel send levels
+        by reading CC 91 values directly from the MIDI file.
+
+        sf2_loader disables reverb globally on init and renders note-by-note
+        without forwarding CC events, so both must be done manually before
+        exporting a wet stem.
+        """
+        self.loader.change_setting('reverb.active', 1)
+        pattern = midi.read_midifile(midi_path)
+        for track in pattern:
+            for event in track:
+                if (type(event) == midi.ControlChangeEvent
+                        and event.data[0] == 91
+                        and event.data[1] > 0):
+                    self.loader.synth.cc(event.channel, 91, event.data[1])
+        logger.debug("Reverb enabled for rendering: %s", midi_path)
+
+    def _disable_reverb(self) -> None:
+        """Disable FluidSynth's reverb unit and zero CC 91 on all channels."""
+        self.loader.change_setting('reverb.active', 0)
+        for ch in range(16):
+            self.loader.synth.cc(ch, 91, 0)
+        logger.debug("Reverb disabled")
+
     def convert_to_wav(self, path: str) -> None:
         """
             Convert MIDI files to WAV format.
@@ -148,8 +174,13 @@ class Controller:
             f = os.path.join(path, filename)
             stem_name, ext = os.path.splitext(filename)
             if os.path.isfile(f) and ext == self.file_extension:
+                is_wet = stem_name.endswith(' - wet')
+                if is_wet:
+                    self._enable_reverb(f)
                 logger.info("Rendering %s -> %s.wav", filename, stem_name)
                 self.loader.export_midi_file(fr'{f}', name=f'{self.audio_stem_path}/{stem_name}.wav', format='wav')
+                if is_wet:
+                    self._disable_reverb()
             else:
                 self.convert_to_wav(path=f"{self.midi_stem_path}/{filename}")
 
