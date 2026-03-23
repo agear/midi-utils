@@ -183,5 +183,11 @@ PERCUSSION = {27: "27 - High Q",
               78: "78 - Mute Cuica",
               79: "79 - Open Cuica",
               80: "80 - Mute Triangle",
-              81: "81 - Open Triangle"
+              81: "81 - Open Triangle",
+              82: "82 - Shaker",
+              83: "83 - Jingle Bell",
+              84: "84 - Bell Tree",
+              85: "85 - Castanets",
+              86: "86 - Mute Surdo",
+              87: "87 - Open Surdo",
               }
