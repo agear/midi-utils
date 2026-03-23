@@ -49,21 +49,27 @@ class TestPercussionInstrumentInit:
         with pytest.raises(TypeError):
             Percussion_Instrument([36])
 
-    def test_value_error_not_in_dict(self):
-        with pytest.raises(ValueError):
+    def test_unknown_note_gets_fallback_name(self):
+        pi = Percussion_Instrument(INVALID_IN_RANGE)
+        assert pi.name == f"{INVALID_IN_RANGE} - Unknown Percussion"
+
+    def test_unknown_note_zero(self):
+        pi = Percussion_Instrument(0)
+        assert pi.name == "0 - Unknown Percussion"
+
+    def test_unknown_note_negative(self):
+        pi = Percussion_Instrument(-1)
+        assert pi.name == "-1 - Unknown Percussion"
+
+    def test_unknown_note_large(self):
+        pi = Percussion_Instrument(200)
+        assert pi.name == "200 - Unknown Percussion"
+
+    def test_unknown_note_emits_warning(self, caplog):
+        import logging
+        with caplog.at_level(logging.WARNING, logger="percussion_instrument"):
             Percussion_Instrument(INVALID_IN_RANGE)
-
-    def test_value_error_zero(self):
-        with pytest.raises(ValueError):
-            Percussion_Instrument(0)
-
-    def test_value_error_negative(self):
-        with pytest.raises(ValueError):
-            Percussion_Instrument(-1)
-
-    def test_value_error_large(self):
-        with pytest.raises(ValueError):
-            Percussion_Instrument(200)
+        assert any(str(INVALID_IN_RANGE) in m for m in caplog.messages)
 
 
 class TestPercussionInstrumentEquality:
