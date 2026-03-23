@@ -40,7 +40,7 @@ class Controller:
         self.loader: sf.sf2_loader = sf.sf2_loader(soundfont_path)
         self.midi_multitrack: midi.Pattern = self._load_midi(self.midi_file_path)
         self.resolution: int = self.midi_multitrack.resolution
-        self.stems_path: str = os.path.dirname(base_path) + os.sep + f"{self.songname} Stems"
+        self.stems_path: str = os.path.join(base_path, f"{self.songname} Stems")
         logger.debug("Stems path: %s", self.stems_path)
         self.transport_track: midi.Track = midi.Track()
         self._make_directories()
@@ -194,12 +194,12 @@ class Controller:
             reverb:    True to render with reverb active; False to suppress it
                        entirely (passes -R 0 -C 0 to FluidSynth).
         """
-        cmd = ['fluidsynth', '-ni', '-T', 'wav', '-F', wav_path]
+        cmd = ['fluidsynth', '-ni', '-a', 'file', '-T', 'wav', '-F', wav_path]
         if not reverb:
             cmd += ['-R', '0', '-C', '0']
         cmd += [self.soundfont_path, midi_path]
         logger.info("Rendering %s", wav_path)
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, stdin=subprocess.DEVNULL)
         if result.returncode != 0:
             raise RuntimeError(
                 f"FluidSynth failed rendering {midi_path}: "
@@ -214,12 +214,20 @@ class Controller:
                 path (str): Path to the MIDI files.
         """
         logger.info("Starting WAV conversion for %s", path)
-        # Bounce full multitrack — split into wet/dry if reverb is present
-        if Encapsulated_Midi_Track._has_reverb(self.midi_multitrack):
-            self._render_to_wav(self.midi_file_path, f'{self.audio_stem_path}/{self.songname} - All - wet.wav', reverb=True)
-            self._render_to_wav(self.midi_file_path, f'{self.audio_stem_path}/{self.songname} - All - dry.wav', reverb=False)
-        else:
-            self._render_to_wav(self.midi_file_path, f'{self.audio_stem_path}/{self.songname} - All.wav', reverb=False)
+        # Write the in-memory pattern to a temp file so FluidSynth always
+        # receives a valid MIDI header (the source file may be corrupt).
+        with tempfile.NamedTemporaryFile(suffix='.mid', delete=False) as tmp:
+            tmp_path = tmp.name
+        try:
+            midi.write_midifile(tmp_path, self.midi_multitrack)
+            # Bounce full multitrack — split into wet/dry if reverb is present
+            if Encapsulated_Midi_Track._has_reverb(self.midi_multitrack):
+                self._render_to_wav(tmp_path, f'{self.audio_stem_path}/{self.songname} - All - wet.wav', reverb=True)
+                self._render_to_wav(tmp_path, f'{self.audio_stem_path}/{self.songname} - All - dry.wav', reverb=False)
+            else:
+                self._render_to_wav(tmp_path, f'{self.audio_stem_path}/{self.songname} - All.wav', reverb=False)
+        finally:
+            os.unlink(tmp_path)
 
         for filename in os.listdir(path):
             f = os.path.join(path, filename)
