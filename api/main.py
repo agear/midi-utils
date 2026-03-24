@@ -27,9 +27,19 @@ from api.schemas import ExtractRequest, StemFile  # noqa: E402
 
 app = FastAPI(title="MIDI Stem Extractor")
 
-_SOUNDFONT_PATH = os.path.join(
+_DEFAULT_SOUNDFONT_ID = "default"
+_DEFAULT_SOUNDFONT_PATH = os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "soundfonts", "gm.sf2"
 )
+
+# sf_id -> {"name": str, "path": str, "is_default": bool}
+_soundfonts: Dict[str, dict] = {
+    _DEFAULT_SOUNDFONT_ID: {
+        "name": "GM (built-in)",
+        "path": _DEFAULT_SOUNDFONT_PATH,
+        "is_default": True,
+    }
+}
 
 # file_id  -> absolute path on disk
 _uploaded_files: Dict[str, str] = {}
@@ -109,18 +119,56 @@ async def upload_midi(file: UploadFile = File(...)):
 
 
 # ---------------------------------------------------------------------------
+# Soundfonts
+# ---------------------------------------------------------------------------
+
+@app.get("/soundfonts")
+def list_soundfonts():
+    """Return all registered soundfonts."""
+    return [
+        {"id": sf_id, "name": entry["name"], "is_default": entry["is_default"]}
+        for sf_id, entry in _soundfonts.items()
+    ]
+
+
+@app.post("/soundfonts/upload")
+async def upload_soundfont(file: UploadFile = File(...)):
+    """Accept a .sf2 file, persist it, and register it as a selectable soundfont."""
+    if not file.filename.lower().endswith(".sf2"):
+        raise HTTPException(status_code=400, detail="Only .sf2 files are accepted.")
+
+    import tempfile
+    sf_id = str(uuid.uuid4())
+    tmp_dir = tempfile.mkdtemp(prefix="midi_sf_")
+    dest = os.path.join(tmp_dir, file.filename)
+
+    with open(dest, "wb") as f:
+        f.write(await file.read())
+
+    name = os.path.splitext(file.filename)[0]
+    _soundfonts[sf_id] = {"name": name, "path": dest, "is_default": False}
+    return {"id": sf_id, "name": name}
+
+
+# ---------------------------------------------------------------------------
 # Extract  (starts a background thread, returns job_id immediately)
 # ---------------------------------------------------------------------------
 
 def _extraction_worker(job_id: str, midi_path: str, req: ExtractRequest) -> None:
     status = _job_status[job_id]
     try:
+        sf_id = req.soundfont_id or _DEFAULT_SOUNDFONT_ID
+        sf_entry = _soundfonts.get(sf_id)
+        if not sf_entry:
+            raise ValueError(f"Soundfont '{sf_id}' not found.")
+        soundfont_path = sf_entry["path"]
+
         _update(job_id, 10, "Initializing controller…")
         controller = Controller(
             midi_file_path=midi_path,
-            soundfont_path=_SOUNDFONT_PATH,
+            soundfont_path=soundfont_path,
             convert_to_wav=req.convert_to_wav,
-            output_path=midi_path,
+            output_path=None,
         )
 
         # Start directory watcher so stems appear in the UI as they're written
@@ -147,15 +195,24 @@ def _extraction_worker(job_id: str, midi_path: str, req: ExtractRequest) -> None
 
         _job_outputs[job_id] = stems_root
 
+        import wave as _wave
         stems = []
         for root, _, files in os.walk(stems_root):
             for fname in sorted(files):
                 full = os.path.join(root, fname)
-                rel = os.path.relpath(full, stems_root)
+                rel  = os.path.relpath(full, stems_root)
+                duration = None
+                if fname.lower().endswith(".wav"):
+                    try:
+                        with _wave.open(full, "r") as wf:
+                            duration = wf.getnframes() / wf.getframerate()
+                    except Exception:
+                        pass
                 stems.append(StemFile(
                     name=fname,
                     path=rel,
                     is_wav=fname.lower().endswith(".wav"),
+                    duration_seconds=duration,
                 ).model_dump())
 
         status["stems"] = stems
@@ -176,8 +233,11 @@ def extract(req: ExtractRequest):
         raise HTTPException(404, "file_id not found. Upload the MIDI file first.")
     if not Path(midi_path).exists():
         raise HTTPException(410, "Uploaded file is no longer available.")
-    if not Path(_SOUNDFONT_PATH).exists():
-        raise HTTPException(500, f"Bundled soundfont not found: {_SOUNDFONT_PATH}")
+    sf_id = req.soundfont_id or _DEFAULT_SOUNDFONT_ID
+    if sf_id not in _soundfonts:
+        raise HTTPException(400, f"Soundfont '{sf_id}' not found.")
+    if not Path(_soundfonts[sf_id]["path"]).exists():
+        raise HTTPException(500, f"Soundfont file missing on disk: {_soundfonts[sf_id]['name']}")
 
     job_id = str(uuid.uuid4())
     _job_status[job_id] = {
@@ -186,6 +246,7 @@ def extract(req: ExtractRequest):
         "done": False,
         "error": None,
         "song_name": "",
+        "soundfont_name": _soundfonts[sf_id]["name"],
         "stems": [],
         "live_stems": [],
     }
