@@ -2,7 +2,8 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Optional, Tuple
 
 import midi
 import sf2_loader as sf
@@ -106,11 +107,16 @@ class Controller:
 
     def _find_transport_track(self) -> Optional[midi.Track]:
         """
-        Return the first track that contains no program changes (the transport/
-        tempo track), or None if every track has at least one program change.
+        Return the first track that contains no program changes AND no note
+        events (the transport/tempo track), or None if no such track exists.
+
+        Tracks that contain NoteOnEvents are data tracks even if they carry
+        no ProgramChangeEvent (e.g. Format 0 files, or tracks that rely on
+        the MIDI default program 0).
         """
         for track_number, track in enumerate(self.midi_multitrack):
-            if not self.get_track_names(track=track):
+            has_notes = any(type(e) == midi.NoteOnEvent for e in track)
+            if not self.get_track_names(track=track) and not has_notes:
                 logger.debug("Track %d identified as transport track", track_number)
                 return track
         logger.warning("No transport track found in %s", self.midi_file_path)
@@ -131,8 +137,10 @@ class Controller:
             self.encapsulated_midi.append(Encapsulated_Midi_Track(events=track, track_number=track_number, controller=self))
             track_number += 1
 
-        for track in self.encapsulated_midi:
-            track.write()
+        with ThreadPoolExecutor(max_workers=len(self.encapsulated_midi) or 1) as pool:
+            futures = [pool.submit(track.write) for track in self.encapsulated_midi]
+            for fut in as_completed(futures):
+                fut.result()
 
 
     @staticmethod
@@ -207,35 +215,68 @@ class Controller:
                 f"{result.stderr.decode().strip()}"
             )
 
-    def convert_to_wav(self, path: str) -> None:
+    def _collect_render_jobs(self, path: str) -> List[Tuple[str, str, bool]]:
         """
-            Convert MIDI files to WAV format.
-
-            Args:
-                path (str): Path to the MIDI files.
+        Recursively collect all (midi_path, wav_path, reverb) render jobs
+        for the stems under `path`, without executing any renders.
         """
-        logger.info("Starting WAV conversion for %s", path)
-        # Write the in-memory pattern to a temp file so FluidSynth always
-        # receives a valid MIDI header (the source file may be corrupt).
-        with tempfile.NamedTemporaryFile(suffix='.mid', delete=False) as tmp:
-            tmp_path = tmp.name
-        try:
-            midi.write_midifile(tmp_path, self.midi_multitrack)
-            # Bounce full multitrack — split into wet/dry if reverb is present
-            if Encapsulated_Midi_Track._has_reverb(self.midi_multitrack):
-                self._render_to_wav(tmp_path, f'{self.audio_stem_path}/{self.songname} - All - wet.wav', reverb=True)
-                self._render_to_wav(tmp_path, f'{self.audio_stem_path}/{self.songname} - All - dry.wav', reverb=False)
-            else:
-                self._render_to_wav(tmp_path, f'{self.audio_stem_path}/{self.songname} - All.wav', reverb=False)
-        finally:
-            os.unlink(tmp_path)
-
+        jobs = []
         for filename in os.listdir(path):
             f = os.path.join(path, filename)
             stem_name, ext = os.path.splitext(filename)
             if os.path.isfile(f) and ext == self.file_extension:
                 is_wet = stem_name.endswith(' - wet')
-                self._render_to_wav(f, f'{self.audio_stem_path}/{stem_name}.wav', reverb=is_wet)
+                jobs.append((f, f'{self.audio_stem_path}/{stem_name}.wav', is_wet))
             else:
-                self.convert_to_wav(path=f"{self.midi_stem_path}/{filename}")
+                jobs += self._collect_render_jobs(f"{self.midi_stem_path}/{filename}")
+        return jobs
+
+    def convert_to_wav(self, path: str, max_workers: Optional[int] = None) -> None:
+        """
+        Convert all MIDI stems to WAV format, rendering in parallel.
+
+        Each stem is rendered by an independent FluidSynth subprocess, so
+        there is no shared state between renders and they can safely run
+        concurrently. The worker count is capped at cpu_count() to avoid
+        spawning more processes than cores when a song has many stems.
+
+        Args:
+            path (str): Path to the MIDI stem files.
+            max_workers (int, optional): Maximum number of concurrent FluidSynth
+                processes. Defaults to cpu_count(). Pass 1 when multiple files
+                are already being processed in parallel by the caller.
+        """
+        logger.info("Starting WAV conversion for %s", path)
+
+        stem_jobs = self._collect_render_jobs(path)
+
+        # Write the in-memory pattern to a temp file so FluidSynth always
+        # receives a valid MIDI header (the source file may be corrupt).
+        # The temp file must stay on disk until all multitrack renders finish.
+        with tempfile.NamedTemporaryFile(suffix='.mid', delete=False) as tmp:
+            tmp_path = tmp.name
+        try:
+            midi.write_midifile(tmp_path, self.midi_multitrack)
+            if Encapsulated_Midi_Track._has_reverb(self.midi_multitrack):
+                multitrack_jobs = [
+                    (tmp_path, f'{self.audio_stem_path}/{self.songname} - All - wet.wav', True),
+                    (tmp_path, f'{self.audio_stem_path}/{self.songname} - All - dry.wav', False),
+                ]
+            else:
+                multitrack_jobs = [
+                    (tmp_path, f'{self.audio_stem_path}/{self.songname} - All.wav', False),
+                ]
+
+            all_jobs = multitrack_jobs + stem_jobs
+            workers = min(len(all_jobs), max_workers or os.cpu_count() or 4)
+            logger.info("Rendering %d file(s) with %d worker(s)", len(all_jobs), workers)
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = {
+                    pool.submit(self._render_to_wav, midi_path, wav_path, reverb=reverb): wav_path
+                    for midi_path, wav_path, reverb in all_jobs
+                }
+                for fut in as_completed(futures):
+                    fut.result()  # re-raises any FluidSynth error immediately
+        finally:
+            os.unlink(tmp_path)
 

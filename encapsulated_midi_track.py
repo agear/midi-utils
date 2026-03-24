@@ -58,7 +58,7 @@ class Encapsulated_Midi_Track:
         Returns:
             List[Encapsulated_Midi_Event]: Encapsulated events.
         """
-        current_program: Optional[int] = None
+        current_program: int = 0  # MIDI default program is 0 (Acoustic Grand Piano)
         encapsulated_track: List[Encapsulated_Midi_Event] = []
         for event in track:
             event_copy: midi.Event = deepcopy(event)
