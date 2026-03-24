@@ -1,3 +1,5 @@
+config.py
+midi-utils.log
 .DS_Store
 .idea/
 __pycache__/
