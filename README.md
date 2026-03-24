@@ -86,7 +86,11 @@ pip install pytest pytest-cov
 
 ## Configuration
 
-All configuration lives in **`config.py`**. Edit this file before running the CLI:
+`config.py` is gitignored (it contains machine-specific paths). Copy the example file and edit it before running the CLI:
+
+```bash
+cp config.example.py config.py
+```
 
 ```python
 # config.py
@@ -126,7 +130,9 @@ After editing `config.py`:
 python main.py
 ```
 
-This processes every path in `midi_file_paths` sequentially and prints progress to stdout.
+For a single file, all WAV stems are rendered in parallel. For multiple files, files are processed in parallel (one per CPU core) with one FluidSynth process per file to avoid thrashing.
+
+Progress and timing are logged to `midi-utils.log` in the repository root (tagged `[CLI]`) and to stdout.
 
 ### Web UI
 
@@ -144,6 +150,8 @@ Then open [http://localhost:8000](http://localhost:8000) in your browser.
 3. Click **Extract**. Stems appear in real time as they are written; each WAV stem shows its duration and a playback waveform.
 
 Uploaded files and job outputs are held in memory and are lost on server restart — this is intentional for a local dev tool.
+
+Each job's progress and timing are logged to `midi-utils.log` in the repository root (tagged `[WEB]`).
 
 ---
 
@@ -216,7 +224,6 @@ pytest test/test_controller.py::TestGetTrackNames::test_single_program_change
 | `percussion_instrument.py` | 100% |
 | `program.py` | 100% |
 | `programs.py` | 100% |
-| `config.py` | 100% |
 | `encapsulated_midi_track.py` | 97% |
 | `controller.py` | 88% |
 | `main.py` | 72% |
@@ -233,7 +240,8 @@ encapsulated_midi_event.py   Wraps one MIDI event with its resolved program name
 program.py       Validated GM program (0–127) with name lookup
 percussion_instrument.py     Validated GM percussion instrument with name lookup
 programs.py      PROGRAMS dict (0–127 → name) and PERCUSSION dict (27–81 → name)
-config.py        Machine-specific paths and flags (edit before use)
+config.py        Machine-specific paths and flags — gitignored, copy from config.example.py
+config.example.py  Template for config.py
 
 api/
   main.py        FastAPI app: /upload, /extract, /download/{job_id}
@@ -250,11 +258,11 @@ static/
 main.py
   └─ Controller.__init__()          load MIDI file, create directories
   └─ Controller.extract_midi_stems()
-       └─ _get_transport_track()    find the timing/tempo track
+       └─ _find_transport_track()   find the timing/tempo track
        └─ Encapsulated_Midi_Track() per non-transport track
             └─ encapsulate_midi_events()   tag each event with its program
             └─ _is_drum_track()            detect channel-9 tracks
             └─ extract_programs()          build per-program MIDI patterns
-            └─ write()                     save .mid files to midi_stems/
-  └─ Controller.convert_to_wav()    render each .mid to .wav via sf2_loader
+            └─ write()                     save .mid files to midi_stems/ [parallel]
+  └─ Controller.convert_to_wav()    render each .mid to .wav via FluidSynth CLI [parallel]
 ```
