@@ -109,6 +109,41 @@ def make_multi_track_pattern():
     return pattern
 
 
+def make_reverb_pattern(reverb_value: int = 64):
+    """
+    Simple pattern whose instrument track contains a CC 91 (reverb) event.
+    reverb_value=0 produces a pattern that _has_reverb() should return False for.
+    """
+    pattern = midi.Pattern(resolution=480)
+
+    # Track 0: transport
+    transport = midi.Track()
+    tempo = midi.SetTempoEvent(tick=0)
+    tempo.set_bpm(120)
+    transport.append(tempo)
+    transport.append(midi.EndOfTrackEvent(tick=1))
+    pattern.append(transport)
+
+    # Track 1: piano with CC 91 reverb
+    piano = midi.Track()
+    pc = midi.ProgramChangeEvent(tick=0, channel=0)
+    pc.data = [0]
+    piano.append(pc)
+    cc_reverb = midi.ControlChangeEvent(tick=0, channel=0)
+    cc_reverb.data = [91, reverb_value]
+    piano.append(cc_reverb)
+    on = midi.NoteOnEvent(tick=0, channel=0)
+    on.data = [60, 80]
+    piano.append(on)
+    off = midi.NoteOffEvent(tick=480, channel=0)
+    off.data = [60, 0]
+    piano.append(off)
+    piano.append(midi.EndOfTrackEvent(tick=1))
+    pattern.append(piano)
+
+    return pattern
+
+
 def make_no_transport_pattern():
     """All tracks have program changes — no dedicated transport track."""
     pattern = midi.Pattern(resolution=480)
@@ -145,6 +180,21 @@ def simple_midi_file(tmp_path):
 def multi_track_midi_file(tmp_path):
     path = str(tmp_path / "multi.mid")
     midi.write_midifile(path, make_multi_track_pattern())
+    return path
+
+
+@pytest.fixture
+def reverb_midi_file(tmp_path):
+    path = str(tmp_path / "reverb.mid")
+    midi.write_midifile(path, make_reverb_pattern(reverb_value=64))
+    return path
+
+
+@pytest.fixture
+def no_reverb_midi_file(tmp_path):
+    """Same structure as reverb_midi_file but CC 91 = 0 (no reverb)."""
+    path = str(tmp_path / "no_reverb.mid")
+    midi.write_midifile(path, make_reverb_pattern(reverb_value=0))
     return path
 
 

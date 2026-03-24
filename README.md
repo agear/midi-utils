@@ -175,6 +175,7 @@ pytest test/
 
 ```bash
 pytest test/ --cov=. --cov-report=term-missing --ignore=.venv
+.venv/bin/python -m pytest test/ --cov=. --cov-report=term-missing --ignore=.venv
 ```
 
 **Run a single test file:**
