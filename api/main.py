@@ -6,6 +6,7 @@ Run with:
 from the midi-utils root directory.
 """
 import io
+import logging
 import os
 import sys
 import time
@@ -26,6 +27,26 @@ from controller import Controller          # noqa: E402
 from api.schemas import ExtractRequest, StemFile  # noqa: E402
 
 app = FastAPI(title="MIDI Stem Extractor")
+
+_LOG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "midi-utils.log")
+_LOG_FMT  = "%(asctime)s [WEB] %(levelname)-8s %(name)s: %(message)s"
+
+
+@app.on_event("startup")
+def _setup_logging() -> None:
+    """Attach a file handler to the root logger after uvicorn has set up its own handlers."""
+    root = logging.getLogger()
+    # Guard against duplicate handlers on --reload
+    if any(isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == _LOG_PATH
+           for h in root.handlers):
+        return
+    fh = logging.FileHandler(_LOG_PATH, mode="a", encoding="utf-8")
+    fh.setLevel(logging.INFO)
+    fh.setFormatter(logging.Formatter(_LOG_FMT))
+    root.addHandler(fh)
+    root.setLevel(logging.INFO)
+    logging.info("=" * 72)
+    logging.info("Web UI started")
 
 _DEFAULT_SOUNDFONT_ID = "default"
 _DEFAULT_SOUNDFONT_PATH = os.path.join(
@@ -156,6 +177,7 @@ async def upload_soundfont(file: UploadFile = File(...)):
 
 def _extraction_worker(job_id: str, midi_path: str, req: ExtractRequest) -> None:
     status = _job_status[job_id]
+    job_start = time.perf_counter()
     try:
         sf_id = req.soundfont_id or _DEFAULT_SOUNDFONT_ID
         sf_entry = _soundfonts.get(sf_id)
@@ -218,8 +240,15 @@ def _extraction_worker(job_id: str, midi_path: str, req: ExtractRequest) -> None
         status["stems"] = stems
         status["song_name"] = song_name
         _update(job_id, 100, "Done!")
+        logging.getLogger(__name__).info(
+            "Job %s (%s) completed in %.2fs", job_id, song_name, time.perf_counter() - job_start
+        )
 
     except Exception as exc:
+        elapsed = time.perf_counter() - job_start
+        logging.getLogger(__name__).error(
+            "Job %s failed after %.2fs: %s", job_id, elapsed, exc
+        )
         status["error"] = str(exc)
         status["message"] = f"Error: {exc}"
         status["done"] = True

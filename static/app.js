@@ -13,6 +13,81 @@
   const queueEl        = document.getElementById("queue");
   const globalActions  = document.getElementById("globalActions");
   const globalDlAllBtn = document.getElementById("globalDlAll");
+  const sfSelect      = document.getElementById("sfSelect");
+  const sfFileInput   = document.getElementById("sfFileInput");
+  const sfUploadLabel = document.getElementById("sfUploadLabel");
+  const sfStatusEl    = document.getElementById("sfStatus");
+
+  // ── Soundfont management ───────────────────────────────────────────────────
+  async function loadSoundfonts() {
+    try {
+      const res = await fetch("/soundfonts");
+      if (!res.ok) return;
+      const fonts = await res.json();
+      const prev = sfSelect.value;
+      sfSelect.innerHTML = "";
+      fonts.forEach(sf => {
+        const opt = document.createElement("option");
+        opt.value = sf.id;
+        opt.textContent = sf.name + (sf.is_default ? " ✦" : "");
+        sfSelect.appendChild(opt);
+      });
+      // Restore selection if it still exists
+      if (prev && [...sfSelect.options].some(o => o.value === prev)) sfSelect.value = prev;
+    } catch (_) {}
+  }
+
+  async function uploadSoundfont(file) {
+    if (!file.name.toLowerCase().endsWith(".sf2")) {
+      sfStatusEl.style.display = "block";
+      sfStatusEl.style.color = "#e07d7d";
+      sfStatusEl.textContent = "Only .sf2 files are accepted.";
+      return;
+    }
+    sfStatusEl.style.display = "block";
+    sfStatusEl.style.color = "#9bb8e0";
+    sfStatusEl.textContent = `Uploading ${file.name}…`;
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/soundfonts/upload", { method: "POST", body: form });
+      if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+      const { name } = await res.json();
+      await loadSoundfonts();
+      [...sfSelect.options].forEach(o => { if (o.textContent === name) sfSelect.value = o.value; });
+      sfStatusEl.style.color = "#7dbf9e";
+      sfStatusEl.textContent = `"${name}" loaded.`;
+    } catch (e) {
+      sfStatusEl.style.color = "#e07d7d";
+      sfStatusEl.textContent = `Upload failed: ${e.message}`;
+    }
+  }
+
+  sfFileInput.addEventListener("change", () => {
+    const file = sfFileInput.files[0];
+    sfFileInput.value = "";
+    if (file) uploadSoundfont(file);
+  });
+
+  sfUploadLabel.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    sfUploadLabel.style.borderColor = "#6c8ebf";
+    sfUploadLabel.style.background  = "#1f2335";
+  });
+  sfUploadLabel.addEventListener("dragleave", () => {
+    sfUploadLabel.style.borderColor = "";
+    sfUploadLabel.style.background  = "";
+  });
+  sfUploadLabel.addEventListener("drop", (e) => {
+    e.preventDefault();
+    sfUploadLabel.style.borderColor = "";
+    sfUploadLabel.style.background  = "";
+    const file = e.dataTransfer.files[0];
+    if (file) uploadSoundfont(file);
+  });
+
+  // Load soundfonts on startup
+  loadSoundfonts();
 
   // ── Drag-and-drop ──────────────────────────────────────────────────────────
   dropzone.addEventListener("click", () => fileInput.click());
@@ -46,6 +121,7 @@
         stems: [],
         liveStems: [],
         songName: "",
+        soundfontName: "",
       });
     });
 
@@ -111,7 +187,7 @@
     const res = await fetch("/extract", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ file_id: item.fileId, convert_to_wav: true }),
+      body: JSON.stringify({ file_id: item.fileId, convert_to_wav: true, soundfont_id: sfSelect.value || null }),
     });
     if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
     item.jobId = (await res.json()).job_id;
@@ -128,9 +204,10 @@
           if (!res.ok) throw new Error(res.statusText);
           const data = await res.json();
 
-          item.progress  = data.progress;
-          item.message   = data.message;
-          item.liveStems = data.live_stems || [];
+          item.progress      = data.progress;
+          item.message       = data.message;
+          item.liveStems     = data.live_stems || [];
+          item.soundfontName = data.soundfont_name || "";
           renderQueueItem(item);
 
           if (data.done) {
@@ -141,9 +218,10 @@
               renderQueueItem(item);
               reject(new Error(data.error));
             } else {
-              item.status   = "done";
-              item.stems    = data.stems;
-              item.songName = data.song_name;
+              item.status        = "done";
+              item.stems         = data.stems;
+              item.songName      = data.song_name;
+              item.soundfontName = data.soundfont_name || "";
               renderQueueItem(item);
               resolve();
             }
@@ -195,8 +273,8 @@
       msg.textContent = item.message;
     }
 
-    // Collapse toggle (done items only)
-    if (item.status === "done") {
+    // Collapse toggle (done or extracting with live stems)
+    if (item.status === "done" || (item.status === "extracting" && item.liveStems.length > 0)) {
       const toggle = el("button", "qi-toggle");
       toggle.textContent = item.expanded === false ? "▶" : "▼";
       toggle.title = "Toggle stems";
@@ -205,6 +283,14 @@
 
     header.append(badge, name, msg);
     wrap.appendChild(header);
+
+    // Soundfont label — always visible, outside the collapsible section
+    if (item.soundfontName) {
+      const sf = el("div");
+      sf.style.cssText = "font-size:0.75rem;color:#555;margin-top:0.3rem;padding-left:1.6rem;";
+      sf.textContent = `Soundfont: ${item.soundfontName}`;
+      wrap.appendChild(sf);
+    }
 
     // Overall progress bar while extracting
     if (item.status === "extracting") {
@@ -219,8 +305,20 @@
 
     // Live stems appearing during extraction
     if (item.status === "extracting" && item.liveStems.length > 0) {
-      wrap.appendChild(buildLiveStemsSection(item));
+      const liveSection = buildLiveStemsSection(item);
+      liveSection.hidden = item.expanded === false;
+      wrap.appendChild(liveSection);
+
+      const toggle = wrap.querySelector(".qi-toggle");
+      if (toggle) {
+        toggle.addEventListener("click", () => {
+          item.expanded      = liveSection.hidden;
+          liveSection.hidden = !item.expanded;
+          toggle.textContent = item.expanded ? "▼" : "▶";
+        });
+      }
     }
+
 
     // Full stems + download actions when done
     if (item.status === "done" && item.stems.length > 0) {
@@ -254,7 +352,8 @@
       div.append(lbl, ul);
     }
     if (wavs.length > 0) {
-      const lbl = el("div", "group-label"); lbl.textContent = "WAV Stems";
+      const lbl = el("div", "group-label");
+      lbl.innerHTML = "WAV Stems" + (item.soundfontName ? ` <span style="font-weight:400;color:#555;text-transform:none;letter-spacing:normal;font-size:0.75rem;">· ${item.soundfontName}</span>` : "");
       const ul  = el("ul", "stem-list");
       wavs.forEach(s => ul.appendChild(buildLiveStemRow(s, item.jobId)));
       div.append(lbl, ul);
@@ -297,7 +396,8 @@
     }
 
     if (wavs.length > 0) {
-      const lbl = el("div", "group-label"); lbl.textContent = "WAV Stems";
+      const lbl = el("div", "group-label");
+      lbl.innerHTML = "WAV Stems" + (item.soundfontName ? ` <span style="font-weight:400;color:#555;text-transform:none;letter-spacing:normal;font-size:0.75rem;">· ${item.soundfontName}</span>` : "");
       const ul  = el("ul", "stem-list");
       wavs.forEach(stem => ul.appendChild(buildStemRow(stem, item.jobId)));
       section.append(lbl, ul);
@@ -371,25 +471,46 @@
     top.append(cb, name);
 
     if (stem.is_wav) {
-      const playBtn   = el("button", "play-btn");
+      const playBtn = el("button", "play-btn");
       playBtn.textContent = "▶"; playBtn.title = "Preview";
 
       const audioWrap = el("div", "audio-wrap");
       audioWrap.hidden = true;
 
+      const canvas = el("canvas");
+      canvas.height = 96;
+      canvas.style.cssText = "width:100%;height:96px;display:block;border-radius:4px;cursor:pointer;margin-bottom:4px;";
+
       const audio = el("audio");
       audio.controls = true; audio.preload = "none";
       audio.src = `/download/${jobId}?path=${encodeURIComponent(stem.path)}`;
       audio.addEventListener("ended", () => { playBtn.textContent = "▶"; });
-      audioWrap.appendChild(audio);
+      audioWrap.append(canvas, audio);
+
+      setupWaveform(audio, canvas, audio.src);
 
       playBtn.addEventListener("click", () => {
         const wasHidden = audioWrap.hidden;
         audioWrap.hidden = !wasHidden;
-        if (wasHidden) { audio.play(); playBtn.textContent = "■"; }
-        else           { audio.pause(); audio.currentTime = 0; playBtn.textContent = "▶"; }
+        if (wasHidden) {
+          canvas.width = canvas.offsetWidth || 600;
+          audio.play();
+          playBtn.textContent = "■";
+        } else {
+          audio.pause();
+          audio.currentTime = 0;
+          playBtn.textContent = "▶";
+        }
       });
 
+      if (stem.duration_seconds != null) {
+        const mins = Math.floor(stem.duration_seconds / 60);
+        const secs = String(Math.floor(stem.duration_seconds % 60)).padStart(2, "0");
+        const dur = el("span");
+        dur.style.cssText = "font-size:0.75rem;color:#555;flex-shrink:0;";
+        dur.textContent = `${mins}:${secs}`;
+        top.append(dur);
+      }
       top.append(playBtn, dl);
       li.append(top, audioWrap);
     } else {
@@ -442,6 +563,94 @@
       showStatus(`Download failed: ${e.message}`, "error");
     }
   });
+
+  // ── Waveform renderer ─────────────────────────────────────────────────────
+  function setupWaveform(audio, canvas, url) {
+    let offscreen = null;
+    let rafId = null;
+
+    async function load() {
+      try {
+        const resp    = await fetch(url);
+        const buf     = await resp.arrayBuffer();
+        const actx    = new (window.AudioContext || window.webkitAudioContext)();
+        const decoded = await actx.decodeAudioData(buf);
+        actx.close();
+
+        const w   = canvas.width  || (canvas.width = canvas.offsetWidth || 600);
+        const h   = canvas.height;
+        const mid = h / 2;
+        const ch  = decoded.getChannelData(0);
+        const step = Math.ceil(ch.length / w);
+
+        offscreen       = document.createElement("canvas");
+        offscreen.width = w; offscreen.height = h;
+        const oc = offscreen.getContext("2d");
+
+        oc.fillStyle = "#161926";
+        oc.fillRect(0, 0, w, h);
+
+        oc.strokeStyle = "#2a2d3a";
+        oc.lineWidth = 1;
+        oc.beginPath(); oc.moveTo(0, mid); oc.lineTo(w, mid); oc.stroke();
+
+        // Build per-pixel peaks
+        const peaks = new Float32Array(w);
+        let globalPeak = 0;
+        for (let x = 0; x < w; x++) {
+          let p = 0;
+          for (let i = 0; i < step; i++) {
+            const v = Math.abs(ch[x * step + i] || 0);
+            if (v > p) p = v;
+          }
+          peaks[x] = p;
+          if (p > globalPeak) globalPeak = p;
+        }
+
+        // Normalize so the loudest peak fills ~95% of the half-height
+        const scale = globalPeak > 0 ? (mid * 0.95) / globalPeak : 1;
+        oc.fillStyle = "#4a72a8";
+        for (let x = 0; x < w; x++) {
+          const amp = peaks[x] * scale;
+          oc.fillRect(x, mid - amp, 1, amp * 2 || 1);
+        }
+
+        drawFrame();
+      } catch (e) {
+        console.warn("Waveform render failed:", e);
+      }
+    }
+
+    function drawFrame() {
+      if (!offscreen) return;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(offscreen, 0, 0);
+      if (audio.duration) {
+        const x = Math.round((audio.currentTime / audio.duration) * canvas.width);
+        ctx.strokeStyle = "rgba(255,255,255,0.85)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      if (!audio.paused && !audio.ended) {
+        rafId = requestAnimationFrame(drawFrame);
+      }
+    }
+
+    audio.addEventListener("play", () => {
+      if (!offscreen) { load(); return; }
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(drawFrame);
+    });
+    audio.addEventListener("pause",  () => { if (rafId) cancelAnimationFrame(rafId); drawFrame(); });
+    audio.addEventListener("ended",  () => { if (rafId) cancelAnimationFrame(rafId); drawFrame(); });
+    audio.addEventListener("seeked", () => { drawFrame(); });
+
+    canvas.addEventListener("click", (e) => {
+      if (!audio.duration) return;
+      const r = canvas.getBoundingClientRect();
+      audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+    });
+  }
 
   // ── Utilities ──────────────────────────────────────────────────────────────
   function el(tag, className) {
