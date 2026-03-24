@@ -1,5 +1,8 @@
+import logging
 from programs import PERCUSSION
 from typing import Union
+
+logger = logging.getLogger(__name__)
 
 class Percussion_Instrument:
     """
@@ -19,12 +22,10 @@ class Percussion_Instrument:
     def __init__(self, number: int):
         if not isinstance(number, int):
             raise TypeError(f"Number should be an integer. Received: {type(number)}")
-        if number not in PERCUSSION:
-            raise ValueError(f"Percussion Instrument number must be a valid key in PERCUSSION dictionary "
-                             f"(Between 27 and 81). Received: {number}")
-
         self.number: int = number
-        self.name: str = PERCUSSION[self.number]
+        if number not in PERCUSSION:
+            logger.warning("Non-standard percussion note %d — not in PERCUSSION dictionary", number)
+        self.name: str = PERCUSSION.get(number, f"{number} - Unknown Percussion")
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Percussion_Instrument):

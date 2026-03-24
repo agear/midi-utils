@@ -145,13 +145,13 @@ class TestEncapsulateMidiEvents:
         )
         assert len(track.events) == len(raw)
 
-    def test_events_before_program_change_have_none(self, mock_controller):
-        """Events before the first ProgramChangeEvent get program_number=None."""
+    def test_events_before_program_change_use_default_program(self, mock_controller):
+        """Events with no prior ProgramChangeEvent default to program 0 (MIDI default)."""
         raw = no_program_track()
         track = Encapsulated_Midi_Track(
             events=raw, track_number=0, controller=mock_controller
         )
-        assert all(e.program_number is None for e in track.events)
+        assert all(e.program_number == 0 for e in track.events)
 
     def test_program_number_set_after_program_change(self, mock_controller):
         raw = piano_track()  # first event is ProgramChangeEvent(data=[0])

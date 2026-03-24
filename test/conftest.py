@@ -216,7 +216,7 @@ def simple_controller(simple_midi_file, tmp_path, soundfont_path):
         midi_file_path=simple_midi_file,
         soundfont_path=soundfont_path,
         convert_to_wav=False,
-        base_path=str(tmp_path / "placeholder"),
+        output_path=str(tmp_path / "placeholder"),
     )
 
 
@@ -227,7 +227,7 @@ def multi_controller(multi_track_midi_file, tmp_path, soundfont_path):
         midi_file_path=multi_track_midi_file,
         soundfont_path=soundfont_path,
         convert_to_wav=False,
-        base_path=str(tmp_path / "placeholder"),
+        output_path=str(tmp_path / "placeholder"),
     )
 
 

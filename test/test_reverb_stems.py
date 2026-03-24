@@ -237,7 +237,7 @@ class TestWriteReverbBranching:
             midi_file_path=reverb_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         c.extract_midi_stems()
         files = os.listdir(c.midi_stem_path)
@@ -253,7 +253,7 @@ class TestWriteReverbBranching:
             midi_file_path=reverb_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         c.extract_midi_stems()
         files = os.listdir(c.midi_stem_path)
@@ -268,7 +268,7 @@ class TestWriteReverbBranching:
             midi_file_path=no_reverb_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         c.extract_midi_stems()
         files = os.listdir(c.midi_stem_path)
@@ -285,7 +285,7 @@ class TestWriteReverbBranching:
             midi_file_path=reverb_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         c.extract_midi_stems()
         dry_files = [
@@ -306,7 +306,7 @@ class TestWriteReverbBranching:
             midi_file_path=reverb_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         c.extract_midi_stems()
         wet_files = [
@@ -329,7 +329,7 @@ class TestWriteReverbBranching:
             midi_file_path=reverb_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         c.extract_midi_stems()
         for fname in os.listdir(c.midi_stem_path):
@@ -345,7 +345,7 @@ class TestWriteReverbBranching:
             midi_file_path=simple_midi_file,
             soundfont_path=soundfont_path,
             convert_to_wav=False,
-            base_path=str(tmp_path / "placeholder"),
+            output_path=str(tmp_path / "placeholder"),
         )
         c.extract_midi_stems()
         files = os.listdir(c.midi_stem_path)
