@@ -9,6 +9,10 @@ from percussion_instrument import Percussion_Instrument
 
 logger = logging.getLogger(__name__)
 
+# MIDI CC 91 is the General MIDI Reverb Send Level controller.
+REVERB_CONTROLLER = 91
+
+
 class Encapsulated_Midi_Track:
     """
         The Midi_Track_AG class represents a MIDI track and provides functionalities to extract and
@@ -54,7 +58,7 @@ class Encapsulated_Midi_Track:
         Returns:
             List[Encapsulated_Midi_Event]: Encapsulated events.
         """
-        current_program: Optional[int] = None
+        current_program: int = 0  # MIDI default program is 0 (Acoustic Grand Piano)
         encapsulated_track: List[Encapsulated_Midi_Event] = []
         for event in track:
             event_copy: midi.Event = deepcopy(event)
@@ -116,12 +120,27 @@ class Encapsulated_Midi_Track:
         return self.patterns
 
     def write(self) -> None:
-        """Writes the MIDI patterns to separate MIDI files."""
-        for pattern in self.patterns:
-            instrument_name = pattern[0]
-            filename: str = f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {instrument_name}.mid"
-            logger.info("Writing stem: %s", filename)
-            midi.write_midifile(filename, pattern[1])
+        """
+        Write each program pattern to disk.
+
+        If a pattern contains reverb (CC 91 > 0) two files are written:
+          - '<name> - wet.mid'  original pattern, reverb intact
+          - '<name> - dry.mid'  copy with CC 91 zeroed on all channels
+        Otherwise a single '<name>.mid' file is written (unchanged behaviour).
+        """
+        for instrument_name, pattern in self.patterns:
+            base: str = f"{self.midi_stem_path}/{self.songname} - {self.track_number} {self.drums}- {instrument_name}"
+            if self._has_reverb(pattern):
+                wet = f"{base} - wet.mid"
+                dry = f"{base} - dry.mid"
+                logger.info("Reverb detected — writing wet stem: %s", wet)
+                midi.write_midifile(wet, pattern)
+                logger.info("Writing dry stem: %s", dry)
+                midi.write_midifile(dry, self._make_dry_pattern(pattern))
+            else:
+                filename = f"{base}.mid"
+                logger.info("Writing stem: %s", filename)
+                midi.write_midifile(filename, pattern)
 
     def extract_midi_drum_stems(self, i: int, track: midi.Track) -> None:
         """
@@ -151,6 +170,54 @@ class Encapsulated_Midi_Track:
             out = f"{percussion_path}/{self.songname} - {self.track_number} - 0 - Drum Kit 0 - {instrument.name}.mid"
             logger.info("Writing drum stem: %s", out)
             midi.write_midifile(out, pattern)
+
+    @staticmethod
+    def _has_reverb(pattern: midi.Pattern) -> bool:
+        """
+        Return True if any track in the pattern contains a CC 91 event with
+        a non-zero value, indicating that reverb is applied.
+        """
+        for track in pattern:
+            for event in track:
+                if (type(event) == midi.ControlChangeEvent
+                        and event.data[0] == REVERB_CONTROLLER
+                        and event.data[1] > 0):
+                    return True
+        return False
+
+    @staticmethod
+    def _make_dry_pattern(pattern: midi.Pattern) -> midi.Pattern:
+        """
+        Return a deep copy of the pattern with reverb removed.
+
+        For every track that contains channel events (i.e. instrument tracks,
+        not the transport/tempo track):
+          1. All existing CC 91 events are set to value 0.
+          2. A CC 91 = 0 event is inserted at tick 0 to suppress the
+             soundfont renderer's built-in reverb default.
+        """
+        dry = deepcopy(pattern)
+        for track in dry:
+            # Identify instrument tracks by the presence of channel-bearing events
+            channel = next(
+                (event.channel for event in track if hasattr(event, "channel")),
+                None,
+            )
+            if channel is None:
+                continue  # transport / meta-only track — leave untouched
+
+            # Zero out any existing CC 91 events
+            for event in track:
+                if (type(event) == midi.ControlChangeEvent
+                        and event.data[0] == REVERB_CONTROLLER):
+                    event.data[1] = 0
+
+            # Prepend CC 91 = 0 to suppress the renderer's default reverb
+            cc_off = midi.ControlChangeEvent(tick=0, channel=channel)
+            cc_off.data = [REVERB_CONTROLLER, 0]
+            track.insert(0, cc_off)
+
+        return dry
 
     @staticmethod
     def get_percussion_instruments(track: midi.Track) -> List[Percussion_Instrument]:

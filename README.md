@@ -39,6 +39,13 @@ A single-page web UI (FastAPI + vanilla JS) provides drag-and-drop upload and pe
 
 - Python **3.8**
 - `git` (the `midi` dependency is installed directly from GitHub)
+- **FluidSynth** (required for WAV rendering)
+
+  ```bash
+  brew install fluidsynth        # macOS
+  sudo apt install fluidsynth    # Debian/Ubuntu
+  ```
+
 - A General MIDI soundfont (a bundled `soundfonts/gm.sf2` is included in the repository)
 
 ---
@@ -86,12 +93,11 @@ All configuration lives in **`config.py`**. Edit this file before running the CL
 
 convert_to_wav: bool = True          # Set False to skip WAV rendering
 
-soundfont_path: str = "/path/to/your/soundfont.sf2"
-# A bundled soundfont is included:
-# soundfont_path = "soundfonts/gm.sf2"
+soundfont_path: str = "soundfonts/gm.sf2"   # bundled; swap for any .sf2
 
-output_path: str = "/path/to/output/directory"
-# Stems are written under: <output_path>/<song name> Stems/
+output_path: Optional[str] = None
+# None  → stems are written next to the source .mid file (default)
+# str   → stems are written under: <output_path>/<song name> Stems/
 
 midi_file_paths: list = [
     "/path/to/Song1.mid",
@@ -102,8 +108,8 @@ midi_file_paths: list = [
 | Variable | Description |
 |---|---|
 | `convert_to_wav` | Whether to render each MIDI stem to WAV using the soundfont |
-| `soundfont_path` | Absolute path to a `.sf2` General MIDI soundfont |
-| `output_path` | Root directory where stem folders are created |
+| `soundfont_path` | Path to a `.sf2` General MIDI soundfont |
+| `output_path` | Root output directory, or `None` to place stems beside the source file |
 | `midi_file_paths` | List of MIDI files to process |
 
 The repository includes a bundled General MIDI soundfont at `soundfonts/gm.sf2`, so no external soundfont download is required.
@@ -134,8 +140,8 @@ Then open [http://localhost:8000](http://localhost:8000) in your browser.
 
 **Flow:**
 1. Drag and drop one or more `.mid` files onto the upload area (or click to browse).
-2. Configure extraction settings in the form.
-3. Click **Extract**. The page displays a download link for each stem once processing completes.
+2. Optionally upload a custom `.sf2` soundfont (drag onto the **+ Upload .sf2** button or click to browse) and select it from the dropdown.
+3. Click **Extract**. Stems appear in real time as they are written; each WAV stem shows its duration and a playback waveform.
 
 Uploaded files and job outputs are held in memory and are lost on server restart — this is intentional for a local dev tool.
 
@@ -175,6 +181,7 @@ pytest test/
 
 ```bash
 pytest test/ --cov=. --cov-report=term-missing --ignore=.venv
+.venv/bin/python -m pytest test/ --cov=. --cov-report=term-missing --ignore=.venv
 ```
 
 **Run a single test file:**

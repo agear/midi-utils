@@ -1,6 +1,12 @@
+config.py
 .DS_Store
 .idea/
 __pycache__/
 .venv/
 *.pyc
+
+# pytest
+.coverage
+htmlcov/
+.pytest_cache/
 
