@@ -58,7 +58,12 @@ class Encapsulated_Midi_Track:
         Returns:
             List[Encapsulated_Midi_Event]: Encapsulated events.
         """
-        current_program: int = 0  # MIDI default program is 0 (Acoustic Grand Piano)
+        # Default to 0 only when the track has no ProgramChangeEvents at all
+        # (e.g. Format 0 files). Tracks that do have program changes use None
+        # before the first change so pre-change setup events are excluded from
+        # all stems rather than incorrectly attributed to program 0.
+        has_program_change = any(type(e) == midi.ProgramChangeEvent for e in track)
+        current_program: Optional[int] = None if has_program_change else 0
         encapsulated_track: List[Encapsulated_Midi_Event] = []
         for event in track:
             event_copy: midi.Event = deepcopy(event)

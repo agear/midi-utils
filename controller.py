@@ -215,16 +215,33 @@ class Controller:
                 f"{result.stderr.decode().strip()}"
             )
 
+    @staticmethod
+    def _has_audible_notes(midi_path: str) -> bool:
+        """Return True if the MIDI file contains at least one NoteOnEvent with velocity > 0."""
+        try:
+            pattern = midi.read_midifile(midi_path)
+            return any(
+                type(event) == midi.NoteOnEvent and event.data[1] > 0
+                for track in pattern
+                for event in track
+            )
+        except Exception:
+            return True  # if we can't read it, let FluidSynth try anyway
+
     def _collect_render_jobs(self, path: str) -> List[Tuple[str, str, bool]]:
         """
         Recursively collect all (midi_path, wav_path, reverb) render jobs
         for the stems under `path`, without executing any renders.
+        Stems with no audible notes are skipped.
         """
         jobs = []
         for filename in os.listdir(path):
             f = os.path.join(path, filename)
             stem_name, ext = os.path.splitext(filename)
             if os.path.isfile(f) and ext == self.file_extension:
+                if not self._has_audible_notes(f):
+                    logger.info("Skipping silent stem: %s", filename)
+                    continue
                 is_wet = stem_name.endswith(' - wet')
                 jobs.append((f, f'{self.audio_stem_path}/{stem_name}.wav', is_wet))
             else:
