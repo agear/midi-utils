@@ -12,7 +12,7 @@ from config import convert_to_wav, midi_file_paths, soundfont_path, output_path
 logger = logging.getLogger(__name__)
 
 
-def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool, output_path: Optional[str] = ".") -> None:
+def main(midi_file_path: str, soundfont_path: str, convert_to_wav: bool, output_path: Optional[str] = None) -> None:
     """
     Extract MIDI stems from a MIDI file and optionally render them to WAV.
 

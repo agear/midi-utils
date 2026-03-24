@@ -1,12 +1,14 @@
-from typing import List
+from typing import List, Optional
 
 convert_to_wav: bool = True
-soundfont_path: str = "/Users/agear/Documents/Projects/AGM/soundfont/gm.sf2"
-output_path: str = "/Volumes/AGM/Stems"
-# output_path: str = "/Users/agear/Documents/Projects/Programming/Python/midi-utils/stems"
-midi_file_paths: List[str] = [
-                                "/Volumes/AGM/Macintosh HD/Users/agear/Documents/Projects/AGM/agm_copy/Guitar Pro PDFs/Finished/0.7/0.7.mid",
-                                "/Volumes/AGM/Macintosh HD/Users/agear/Documents/Projects/AGM/agm_copy/Guitar Pro PDFs/Finished/0.7/0.71.mid",
+soundfont_path: str = "/Users/agear/Desktop/midi/midi-utils/soundfonts/gm.sf2"
+output_path: Optional[str] = None  # None = place stems next to the source .mid file
+# base_path: str = "/Users/agear/Documents/Projects/Programming/Python/midi-utils/stems"
+midi_file_paths: List[str] = [ 
+                              # "/Users/agear/Desktop/midi_test/confirmed_reverb.mid",
+                              "/Users/agear/Documents/Projects/AGM/gtp/only_gtrpro manual/From CD/Guitar pro mix and match/0Temp/00berklee/triste.mid",
+                                # "/Volumes/AGM/Macintosh HD/Users/agear/Documents/Projects/AGM/agm_copy/Guitar Pro PDFs/Finished/0.7/0.7.mid",
+                                # "/Volumes/AGM/Macintosh HD/Users/agear/Documents/Projects/AGM/agm_copy/Guitar Pro PDFs/Finished/0.7/0.71.mid",
                                 # "/Users/agear/Desktop/rockin beat.mid",
                               # "/Users/agear/Documents/Projects/AGM/percussion_test.mid",
                               # "/Users/agear/Documents/Projects/AGM/Guitar Pro PDFs/Finished/Aphids/Aphids2.mid",
