@@ -122,25 +122,40 @@ class Controller:
         logger.warning("No transport track found in %s", self.midi_file_path)
         return None
 
+    def _construct_and_write_track(self, track: midi.Track, track_number: int) -> Encapsulated_Midi_Track:
+        """Construct one Encapsulated_Midi_Track and immediately write its stems to disk."""
+        enc = Encapsulated_Midi_Track(events=track, track_number=track_number, controller=self)
+        enc.write()
+        return enc
+
     def extract_midi_stems(self) -> None:
         """
         Extract MIDI stems from the multitrack and save them as separate MIDI files.
+
+        Track construction (event encapsulation, program extraction) and file writing
+        are combined into a single worker per track and run in parallel so that all
+        tracks are processed concurrently rather than constructed sequentially and
+        then written in a second parallel pass.
         """
         transport = self._find_transport_track()
         if transport is not None:
             self.transport_track = transport
 
+        numbered_tracks: List[Tuple[midi.Track, int]] = []
         track_number: int = 0
         for track in self.midi_multitrack:
             if track == self.transport_track:
                 continue
-            self.encapsulated_midi.append(Encapsulated_Midi_Track(events=track, track_number=track_number, controller=self))
+            numbered_tracks.append((track, track_number))
             track_number += 1
 
-        with ThreadPoolExecutor(max_workers=len(self.encapsulated_midi) or 1) as pool:
-            futures = [pool.submit(track.write) for track in self.encapsulated_midi]
+        with ThreadPoolExecutor(max_workers=len(numbered_tracks) or 1) as pool:
+            futures = [
+                pool.submit(self._construct_and_write_track, track, num)
+                for track, num in numbered_tracks
+            ]
             for fut in as_completed(futures):
-                fut.result()
+                self.encapsulated_midi.append(fut.result())
 
 
     @staticmethod
