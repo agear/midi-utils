@@ -69,6 +69,37 @@ def drum_track():
     return t
 
 
+def format0_mixed_channel_track():
+    """
+    Format 0-style track: piano (ch 0, prog 0), bass (ch 1, prog 33), drums (ch 9).
+    Bass plays note 36 — the same number as kick drum — to exercise channel-aware muting.
+    """
+    t = midi.Track()
+    pc0 = midi.ProgramChangeEvent(tick=0, channel=0)
+    pc0.data = [0]   # Acoustic Grand
+    t.append(pc0)
+    pc1 = midi.ProgramChangeEvent(tick=0, channel=1)
+    pc1.data = [33]  # Electric Bass (finger)
+    t.append(pc1)
+    pc9 = midi.ProgramChangeEvent(tick=0, channel=9)
+    pc9.data = [0]
+    t.append(pc9)
+    piano_on = midi.NoteOnEvent(tick=0, channel=0)
+    piano_on.data = [60, 80]
+    t.append(piano_on)
+    bass_on = midi.NoteOnEvent(tick=0, channel=1)
+    bass_on.data = [36, 90]  # note 36 = same number as kick drum
+    t.append(bass_on)
+    kick = midi.NoteOnEvent(tick=240, channel=9)
+    kick.data = [36, 100]
+    t.append(kick)
+    snare = midi.NoteOnEvent(tick=240, channel=9)
+    snare.data = [38, 90]
+    t.append(snare)
+    t.append(midi.EndOfTrackEvent(tick=1))
+    return t
+
+
 def empty_track():
     t = midi.Track()
     t.append(midi.EndOfTrackEvent(tick=1))
@@ -203,6 +234,19 @@ class TestIsDrumTrack:
             events=no_program_track(), track_number=0, controller=mock_controller
         )
         assert track._is_drum_track() == ""
+
+    def test_mixed_channel_track_not_detected_as_drum(self, mock_controller):
+        """A track with both channel-9 and non-channel-9 ProgramChangeEvents is not a drum track."""
+        raw = format0_mixed_channel_track()
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        assert track.drums == ""
+        assert not track.is_drums
+
+    def test_dedicated_drum_track_still_detected(self, mock_controller):
+        """A track with only channel-9 ProgramChangeEvents is still correctly detected as drums."""
+        track = Encapsulated_Midi_Track(events=drum_track(), track_number=0, controller=mock_controller)
+        assert track.drums == "- 0 - Drum Kit 0 "
+        assert track.is_drums
 
 
 class TestGetProgramNames:
@@ -422,6 +466,48 @@ class TestGetPercussionInstruments:
             assert isinstance(item, Percussion_Instrument)
 
 
+class TestPerChannelProgramTracking:
+    """Per-channel program state: events get the program of their own channel, not a shared one."""
+
+    def test_each_channel_gets_its_own_program(self, mock_controller):
+        raw = format0_mixed_channel_track()
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        ch0_notes = [e for e in track.events if type(e.event) == midi.NoteOnEvent and e.event.channel == 0]
+        ch1_notes = [e for e in track.events if type(e.event) == midi.NoteOnEvent and e.event.channel == 1]
+        assert all(e.program_name == "0 - Acoustic Grand" for e in ch0_notes)
+        assert all(e.program_name == "33 - Electric Bass (finger)" for e in ch1_notes)
+
+    def test_later_channel_program_change_does_not_affect_other_channel(self, mock_controller):
+        """A ProgramChangeEvent on channel 1 must not alter the attributed program for channel 0."""
+        raw = format0_mixed_channel_track()
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        ch0_notes = [e for e in track.events if type(e.event) == midi.NoteOnEvent and e.event.channel == 0]
+        assert all(e.program_name == "0 - Acoustic Grand" for e in ch0_notes)
+
+    def test_channel9_events_get_drum_program_name(self, mock_controller):
+        """NoteOnEvents on channel 9 always resolve to '0 - Drum Kit 0'."""
+        raw = format0_mixed_channel_track()
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        ch9_notes = [e for e in track.events if type(e.event) == midi.NoteOnEvent and e.event.channel == 9]
+        assert all(e.program_name == "0 - Drum Kit 0" for e in ch9_notes)
+
+    def test_meta_events_get_none_program(self, mock_controller):
+        """Meta events (no channel attribute) receive program_name 'None'."""
+        raw = format0_mixed_channel_track()
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        meta = [e for e in track.events if type(e.event) == midi.EndOfTrackEvent]
+        assert all(e.program_name == "None" for e in meta)
+
+    def test_mixed_channel_yields_separate_stems_per_instrument(self, mock_controller):
+        """Each channel's program produces its own pattern in extract_programs()."""
+        raw = format0_mixed_channel_track()
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        program_names = {name for name, _ in track.patterns}
+        assert "0 - Acoustic Grand" in program_names
+        assert "33 - Electric Bass (finger)" in program_names
+        assert "0 - Drum Kit 0" in program_names
+
+
 class TestExtractMidiDrumStems:
     def test_creates_subdirectory(self, mock_controller):
         track = Encapsulated_Midi_Track(
@@ -457,3 +543,109 @@ class TestExtractMidiDrumStems:
             full = os.path.join(drum_dir, f)
             reloaded = midi.read_midifile(full)
             assert isinstance(reloaded, midi.Pattern)
+
+    def test_only_channel9_notes_treated_as_percussion_instruments(self, mock_controller):
+        """get_percussion_instruments must not include non-ch9 note numbers as drum instruments."""
+        raw = format0_mixed_channel_track()
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        instruments = Encapsulated_Midi_Track.get_percussion_instruments(track.events)
+        note_numbers = {pi.number for pi in instruments}
+        assert 60 not in note_numbers   # piano note — not a drum
+        assert 36 in note_numbers       # kick drum (ch9)
+        assert 38 in note_numbers       # snare (ch9)
+
+    def test_non_channel9_noteon_with_matching_note_number_is_muted(self, mock_controller):
+        """
+        A non-drum channel NoteOnEvent whose note number matches a drum instrument
+        must be muted so it does not bleed into that instrument's percussion stem.
+        """
+        raw = format0_mixed_channel_track()  # bass ch1 note 36, kick ch9 note 36
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        drum_dir = os.path.join(
+            mock_controller.midi_stem_path,
+            f"{mock_controller.songname} - {track.track_number} - 0 - Drum Kit 0",
+        )
+        track.extract_midi_drum_stems(i=track.track_number, track=track.events)
+        kick_files = [f for f in os.listdir(drum_dir) if "36" in f]
+        assert len(kick_files) == 1
+        pattern = midi.read_midifile(os.path.join(drum_dir, kick_files[0]))
+        for midi_track in pattern:
+            for event in midi_track:
+                if type(event) == midi.NoteOnEvent and getattr(event, "channel", None) != 9:
+                    assert event.data[1] == 0, "Non-drum-channel note should be muted in percussion stem"
+
+    def test_correct_drum_note_retains_velocity(self, mock_controller):
+        """The matching ch9 NoteOnEvent for an instrument must keep its original velocity."""
+        track = Encapsulated_Midi_Track(
+            events=drum_track(), track_number=0, controller=mock_controller
+        )
+        drum_dir = os.path.join(
+            mock_controller.midi_stem_path,
+            f"{mock_controller.songname} - {track.track_number} - 0 - Drum Kit 0",
+        )
+        kick_files = [f for f in os.listdir(drum_dir) if "36" in f]
+        assert len(kick_files) == 1
+        pattern = midi.read_midifile(os.path.join(drum_dir, kick_files[0]))
+        kick_notes = [
+            e for t in pattern for e in t
+            if type(e) == midi.NoteOnEvent
+            and getattr(e, "channel", None) == 9
+            and e.data[0] == 36
+        ]
+        assert len(kick_notes) > 0
+        assert all(e.data[1] > 0 for e in kick_notes)
+
+
+class TestMixedChannelWrite:
+    """write() on Format 0 / mixed-channel tracks produces per-instrument percussion stems."""
+
+    def test_creates_drum_subdirectory(self, mock_controller):
+        raw = format0_mixed_channel_track()
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        track.write()
+        drum_dir = os.path.join(
+            mock_controller.midi_stem_path,
+            f"{mock_controller.songname} - {track.track_number} - 0 - Drum Kit 0",
+        )
+        assert os.path.isdir(drum_dir)
+
+    def test_creates_individual_drum_stems(self, mock_controller):
+        """One .mid file per unique channel-9 drum note."""
+        raw = format0_mixed_channel_track()  # kick (36) and snare (38) on ch9
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        track.write()
+        drum_dir = os.path.join(
+            mock_controller.midi_stem_path,
+            f"{mock_controller.songname} - {track.track_number} - 0 - Drum Kit 0",
+        )
+        files = [f for f in os.listdir(drum_dir) if f.endswith(".mid")]
+        assert len(files) == 2
+
+    def test_creates_non_drum_stems(self, mock_controller):
+        """Separate .mid stems are still written for piano and bass channels."""
+        raw = format0_mixed_channel_track()
+        track = Encapsulated_Midi_Track(events=raw, track_number=0, controller=mock_controller)
+        track.write()
+        top_files = [
+            f for f in os.listdir(mock_controller.midi_stem_path)
+            if os.path.isfile(os.path.join(mock_controller.midi_stem_path, f))
+            and f.endswith(".mid")
+        ]
+        assert any("Acoustic Grand" in f for f in top_files)
+        assert any("Electric Bass" in f for f in top_files)
+        assert any("Drum Kit 0" in f for f in top_files)
+
+    def test_dedicated_drum_track_not_double_extracted(self, mock_controller):
+        """A dedicated drum track (is_drums=True) must NOT trigger the mixed-channel path."""
+        track = Encapsulated_Midi_Track(
+            events=drum_track(), track_number=0, controller=mock_controller
+        )
+        assert track.is_drums
+        drum_dir = os.path.join(
+            mock_controller.midi_stem_path,
+            f"{mock_controller.songname} - {track.track_number} - 0 - Drum Kit 0",
+        )
+        files_before_write = set(os.listdir(drum_dir))
+        track.write()
+        files_after_write = set(os.listdir(drum_dir))
+        assert files_before_write == files_after_write  # no new files added by write()
