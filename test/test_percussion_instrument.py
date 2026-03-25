@@ -67,6 +67,8 @@ class TestPercussionInstrumentInit:
 
     def test_unknown_note_emits_warning(self, caplog):
         import logging
+        import percussion_instrument
+        percussion_instrument._warned_notes.discard(INVALID_IN_RANGE)
         with caplog.at_level(logging.WARNING, logger="percussion_instrument"):
             Percussion_Instrument(INVALID_IN_RANGE)
         assert any(str(INVALID_IN_RANGE) in m for m in caplog.messages)
