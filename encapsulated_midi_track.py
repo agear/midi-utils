@@ -58,28 +58,51 @@ class Encapsulated_Midi_Track:
         Returns:
             List[Encapsulated_Midi_Event]: Encapsulated events.
         """
+        # Track current program per channel so that multi-channel tracks (e.g.
+        # Format 0 files with all channels interleaved) attribute each event to
+        # the correct instrument rather than a single shared program state.
+        #
         # Default to 0 only when the track has no ProgramChangeEvents at all
-        # (e.g. Format 0 files). Tracks that do have program changes use None
-        # before the first change so pre-change setup events are excluded from
-        # all stems rather than incorrectly attributed to program 0.
+        # (pure Format 0 files with no changes). When program changes exist,
+        # channels default to None before their first change so pre-change
+        # setup events are excluded from all stems.
         has_program_change = any(type(e) == midi.ProgramChangeEvent for e in track)
-        current_program: Optional[int] = None if has_program_change else 0
+        default_program: Optional[int] = None if has_program_change else 0
+        current_programs: dict = {}  # channel -> current program number
         encapsulated_track: List[Encapsulated_Midi_Event] = []
         for event in track:
             event_copy: midi.Event = deepcopy(event)
             if type(event_copy) == midi.ProgramChangeEvent:
-                current_program = event_copy.data[0]
-            encapsulated_event: Encapsulated_Midi_Event = Encapsulated_Midi_Event(event=event_copy, program_number=current_program)
+                current_programs[event_copy.channel] = event_copy.data[0]
+            channel = getattr(event_copy, "channel", None)
+            if channel is not None:
+                program = current_programs.get(channel, default_program)
+            else:
+                program = default_program  # meta/sysex events have no channel
+            encapsulated_event: Encapsulated_Midi_Event = Encapsulated_Midi_Event(event=event_copy, program_number=program)
             encapsulated_track.append(encapsulated_event)
         return encapsulated_track
 
     def _is_drum_track(self) -> str:
-        """Checks if the track is a drum track by analyzing the MIDI events."""
-        for event in self.events:
-            if type(event.event) == midi.ProgramChangeEvent:
-                if event.event.channel == 9:
-                    self.extract_midi_drum_stems(i=self.track_number, track=self.events)
-                    return "- 0 - Drum Kit 0 "
+        """
+        Return the drum label only when the track has a ProgramChangeEvent on
+        channel 9 and no ProgramChangeEvents on any other channel.
+
+        This preserves the original behaviour for dedicated Format 1 drum tracks
+        (one channel-9 program change, no others) while correctly ignoring
+        mixed-channel tracks such as Format 0 files where every channel's program
+        changes are interleaved in a single track.
+        """
+        has_drum_pc = False
+        for e in self.events:
+            if type(e.event) == midi.ProgramChangeEvent:
+                if e.event.channel == 9:
+                    has_drum_pc = True
+                else:
+                    return ""  # non-drum program change → mixed-channel track
+        if has_drum_pc:
+            self.extract_midi_drum_stems(i=self.track_number, track=self.events)
+            return "- 0 - Drum Kit 0 "
         return ""
 
     def _get_program_names(self):
@@ -147,6 +170,20 @@ class Encapsulated_Midi_Track:
                 logger.info("Writing stem: %s", filename)
                 midi.write_midifile(filename, pattern)
 
+            # For mixed-channel tracks (e.g. Format 0) a "0 - Drum Kit 0" stem
+            # is produced by extract_programs() but _is_drum_track() never ran
+            # because non-drum program changes were also present.  Extract
+            # individual per-instrument drum stems here, passing all events so
+            # that delta-tick timing is preserved (see extract_midi_drum_stems
+            # for how non-channel-9 notes are muted without removing their ticks).
+            if instrument_name == "0 - Drum Kit 0" and not self.is_drums:
+                has_ch9_notes = any(
+                    type(e.event) == midi.NoteOnEvent and getattr(e.event, "channel", None) == 9
+                    for e in self.events
+                )
+                if has_ch9_notes:
+                    self.extract_midi_drum_stems(i=self.track_number, track=self.events)
+
     def extract_midi_drum_stems(self, i: int, track: midi.Track) -> None:
         """
             Extracts MIDI drum stems from the track and saves them as separate MIDI files.
@@ -168,8 +205,13 @@ class Encapsulated_Midi_Track:
             percussion_track: midi.Track = midi.Track()
             for event in track:
                 event_copy: midi.Event = deepcopy(event)
-                if type(event_copy.event) == midi.NoteOnEvent and event_copy.event.data[0] != instrument.number:
-                    event_copy.event.data[1] = 0  # mute other drum instruments
+                if type(event_copy.event) == midi.NoteOnEvent:
+                    is_this_drum = (
+                        getattr(event_copy.event, "channel", None) == 9
+                        and event_copy.event.data[0] == instrument.number
+                    )
+                    if not is_this_drum:
+                        event_copy.event.data[1] = 0  # mute all other notes
                 percussion_track.append(event_copy.event)
             pattern.append(percussion_track)
             out = f"{percussion_path}/{self.songname} - {self.track_number} - 0 - Drum Kit 0 - {instrument.name}.mid"
@@ -229,6 +271,10 @@ class Encapsulated_Midi_Track:
         """
         Retrieves the list of unique percussion instruments from the track.
 
+        Only channel-9 NoteOnEvents are considered drum instruments. This
+        ensures that non-drum channels in mixed-channel tracks (e.g. Format 0)
+        do not produce spurious percussion instrument entries.
+
         Args:
             track: List of Encapsulated_Midi_Event objects.
 
@@ -237,6 +283,7 @@ class Encapsulated_Midi_Track:
         """
         percussion_instruments = set()
         for event in track:
-            if type(event.event) == midi.NoteOnEvent:
+            if (type(event.event) == midi.NoteOnEvent
+                    and getattr(event.event, "channel", None) == 9):
                 percussion_instruments.add(Percussion_Instrument(event.event.data[0]))
         return list(percussion_instruments)
