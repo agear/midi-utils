@@ -122,6 +122,7 @@
         liveStems: [],
         songName: "",
         soundfontName: "",
+        _renderedStems: new Set(),
       });
     });
 
@@ -244,10 +245,86 @@
   }
 
   function renderQueueItem(item) {
-    const el = buildQueueItemEl(item);
     const existing = document.getElementById(`qi-${item.id}`);
-    if (existing) existing.replaceWith(el);
-    else queueEl.appendChild(el);
+    if (!existing) {
+      queueEl.appendChild(buildQueueItemEl(item));
+      return;
+    }
+    // Surgical update while in the extracting state to avoid DOM churn every 500ms
+    if (item.status === "extracting" && existing.dataset.status === "extracting") {
+      patchExtractingCard(existing, item);
+      return;
+    }
+    // Status transition: full rebuild (happens at most a few times per item)
+    existing.replaceWith(buildQueueItemEl(item));
+  }
+
+  function patchExtractingCard(card, item) {
+    const msg = card.querySelector(".qi-msg");
+    if (msg) msg.textContent = `${item.message} (${item.progress}%)`;
+
+    const fill = card.querySelector(".progress-bar-fill");
+    if (fill) fill.style.width = `${item.progress}%`;
+
+    if (!item._renderedStems) item._renderedStems = new Set();
+    const newStems = item.liveStems.filter(s => !item._renderedStems.has(s.path));
+    if (newStems.length === 0) return;
+
+    // Show toggle button if this is the first time we have live stems
+    if (!card.querySelector(".qi-toggle")) {
+      const toggle = el("button", "qi-toggle");
+      toggle.textContent = "▼";
+      toggle.title = "Toggle stems";
+      const header = card.querySelector(".qi-header");
+      header.insertBefore(toggle, header.firstChild);
+    }
+
+    let liveSection = card.querySelector(".qi-stems");
+    if (!liveSection) {
+      liveSection = el("div", "qi-stems");
+      liveSection.hidden = item.expanded === false;
+      liveSection.appendChild(buildPendingRow());
+      card.appendChild(liveSection);
+
+      const toggle = card.querySelector(".qi-toggle");
+      if (toggle) {
+        toggle.addEventListener("click", () => {
+          item.expanded      = liveSection.hidden;
+          liveSection.hidden = !item.expanded;
+          toggle.textContent = item.expanded ? "▼" : "▶";
+        });
+      }
+    }
+
+    const spinnerRow = liveSection.lastElementChild;
+
+    newStems.forEach(s => {
+      item._renderedStems.add(s.path);
+      const groupKey = s.is_wav ? "wav" : "midi";
+      let ul = liveSection.querySelector(`[data-group="${groupKey}"] ul`);
+
+      if (!ul) {
+        const groupDiv = el("div");
+        groupDiv.dataset.group = groupKey;
+        const lbl = el("div", "group-label");
+        if (s.is_wav) {
+          lbl.textContent = "WAV Stems";
+          if (item.soundfontName) {
+            const sp = el("span");
+            sp.style.cssText = "font-weight:400;color:#555;text-transform:none;letter-spacing:normal;font-size:0.75rem;";
+            sp.textContent = ` · ${item.soundfontName}`;
+            lbl.appendChild(sp);
+          }
+        } else {
+          lbl.textContent = "MIDI Stems";
+        }
+        ul = el("ul", "stem-list");
+        groupDiv.append(lbl, ul);
+        liveSection.insertBefore(groupDiv, spinnerRow);
+      }
+
+      ul.appendChild(buildLiveStemRow(s, item.jobId));
+    });
   }
 
   const BADGE = { pending: "○", uploading: "↑", extracting: "⟳", done: "✓", error: "✕" };
@@ -256,6 +333,7 @@
     const wrap = document.createElement("div");
     wrap.className = `queue-item status-${item.status}`;
     wrap.id = `qi-${item.id}`;
+    wrap.dataset.status = item.status;
 
     // Header: badge + filename + status message
     const header = el("div", "qi-header");
@@ -307,6 +385,9 @@
     if (item.status === "extracting" && item.liveStems.length > 0) {
       const liveSection = buildLiveStemsSection(item);
       liveSection.hidden = item.expanded === false;
+      // Mark all currently-rendered live stems so patchExtractingCard won't duplicate them
+      if (!item._renderedStems) item._renderedStems = new Set();
+      item.liveStems.forEach(s => item._renderedStems.add(s.path));
       wrap.appendChild(liveSection);
 
       const toggle = wrap.querySelector(".qi-toggle");
@@ -340,26 +421,7 @@
   }
 
   // ── Live stems (shown while extracting) ───────────────────────────────────
-  function buildLiveStemsSection(item) {
-    const div   = el("div", "qi-stems");
-    const midis = item.liveStems.filter(s => !s.is_wav);
-    const wavs  = item.liveStems.filter(s =>  s.is_wav);
-
-    if (midis.length > 0) {
-      const lbl = el("div", "group-label"); lbl.textContent = "MIDI Stems";
-      const ul  = el("ul", "stem-list");
-      midis.forEach(s => ul.appendChild(buildLiveStemRow(s, item.jobId)));
-      div.append(lbl, ul);
-    }
-    if (wavs.length > 0) {
-      const lbl = el("div", "group-label");
-      lbl.innerHTML = "WAV Stems" + (item.soundfontName ? ` <span style="font-weight:400;color:#555;text-transform:none;letter-spacing:normal;font-size:0.75rem;">· ${item.soundfontName}</span>` : "");
-      const ul  = el("ul", "stem-list");
-      wavs.forEach(s => ul.appendChild(buildLiveStemRow(s, item.jobId)));
-      div.append(lbl, ul);
-    }
-
-    // "Processing…" pending row at the bottom
+  function buildPendingRow() {
     const pending = el("li", "stem-row");
     const top     = el("div", "stem-row-top");
     const spinner = el("span", "stem-spinner"); spinner.textContent = "⟳";
@@ -367,10 +429,34 @@
     label.textContent = "Processing…";
     label.style.cssText = "color:#555;font-style:italic";
     top.append(spinner, label);
-    const bar = el("div", "stem-bar stem-bar-active");
-    pending.append(top, bar);
-    div.appendChild(pending);
+    pending.append(top, el("div", "stem-bar stem-bar-active"));
+    return pending;
+  }
 
+  function buildLiveStemsSection(item) {
+    const div   = el("div", "qi-stems");
+    const midis = item.liveStems.filter(s => !s.is_wav);
+    const wavs  = item.liveStems.filter(s =>  s.is_wav);
+
+    if (midis.length > 0) {
+      const groupDiv = el("div"); groupDiv.dataset.group = "midi";
+      const lbl = el("div", "group-label"); lbl.textContent = "MIDI Stems";
+      const ul  = el("ul", "stem-list");
+      midis.forEach(s => ul.appendChild(buildLiveStemRow(s, item.jobId)));
+      groupDiv.append(lbl, ul);
+      div.append(groupDiv);
+    }
+    if (wavs.length > 0) {
+      const groupDiv = el("div"); groupDiv.dataset.group = "wav";
+      const lbl = el("div", "group-label");
+      lbl.innerHTML = "WAV Stems" + (item.soundfontName ? ` <span style="font-weight:400;color:#555;text-transform:none;letter-spacing:normal;font-size:0.75rem;">· ${item.soundfontName}</span>` : "");
+      const ul  = el("ul", "stem-list");
+      wavs.forEach(s => ul.appendChild(buildLiveStemRow(s, item.jobId)));
+      groupDiv.append(lbl, ul);
+      div.append(groupDiv);
+    }
+
+    div.appendChild(buildPendingRow());
     return div;
   }
 
